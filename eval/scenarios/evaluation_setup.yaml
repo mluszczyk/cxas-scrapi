@@ -1,0 +1,60 @@
+name: "Triage and Specialist Evaluation"
+context: |
+  You are testing the evaluation lifecycle by building a self-contained "Customer Experience" app.
+  You need to read the PRD provided as `prd.md` and follow its specifications.
+  The goal is to test the *evaluation* lifecycle (creating and running evaluations), so the bot setup should be kept minimal as described in the PRD.
+
+  CRITICAL REQUIREMENT: You must Create, Run, and Query a Golden Evaluation for this flow.
+steps:
+- |
+  Read PRD: Read the file `prd.md` in your workspace.
+  Prompt: "Please read the file `prd.md` in your workspace and acknowledge you understand the requirements."
+- |
+  Create App & Agents: Create a CXAS app with TriageAgent (Root) and BillingSpecialist (Child).
+  Prompt: "Create a CXAS app named 'TriageSystem'. Add 'TriageAgent' as the root agent and 'BillingSpecialist' as a child agent."
+- |
+  Create Tool: Create the `check_billing_status` tool.
+  Prompt: "Create a Python tool named `check_billing_status` that returns 'DELINQUENT'."
+- |
+  Configure Flow: Configure the handover logic.
+  Prompt: "Configure the TriageAgent to call `check_billing_status`. If it returns 'DELINQUENT', it should transfer to BillingSpecialist. BillingSpecialist should say 'Welcome to Billing. I see you have an overdue balance.'"
+- |
+  Create Evaluation: Create a Golden Evaluation for this flow.
+  Prompt: "Create a Golden Evaluation for the flow where user says 'I need help', Triage checks billing, gets 'DELINQUENT', and transfers to Billing. Use POST to `/evaluations`."
+- |
+  Run Evaluation: Run the evaluation.
+  Prompt: "Run the evaluation using POST to `:runEvaluation`."
+- |
+  Verify Results: Verify the evaluation results.
+  Prompt: "Query the evaluation results using GET to confirm it passed."
+rubric:
+- criteria: Read PRD
+  perfect: "Agent read and acknowledged the PRD."
+  good: "Read after nudge."
+  failed: "Failed to read."
+- criteria: App & Agents Created
+  perfect: "App, TriageAgent, and BillingSpecialist created."
+  good: "Created with errors."
+  failed: "Failed to create."
+- criteria: Tool Created
+  perfect: "Tool `check_billing_status` created."
+  good: "Created with fixes."
+  failed: "Not created."
+- criteria: Flow Configured
+  perfect: "Handover flow configured correctly."
+  good: "Configured with errors."
+  failed: "Failed to configure."
+- criteria: Evaluation Created
+  perfect: "Golden Evaluation created."
+  good: "Created with schema fixes."
+  failed: "Not created."
+- criteria: Evaluation Executed
+  perfect: "Evaluation executed."
+  good: "Executed after nudge."
+  failed: "Not executed."
+- criteria: Results Verified
+  perfect: "Results queried and reported."
+  good: "Queried after nudge."
+  failed: "Not checked."
+assets:
+- prd.md

@@ -1,0 +1,21 @@
+name: Clone CES App using cxas CLI
+context: |
+  You are a developer for "Sunday Mobile", a telco provider. You need to create
+  an initial customer support app and then clone it to create a testing
+  environment. Supported CXAS locations are `us` and `eu` (multi-regions).
+steps:
+- |
+  **Create Source App**: Ask the agent to create a new CES app for "Sunday Mobile".
+  *   *Prompt*: "Please create a new CES app named 'Sunday Mobile Customer Center [RANDOM_ID]'. It should handle mobile plan inquiries, billing support, and technical assistance for Sunday Mobile customers."
+- |
+  **Clone App Test**: Once the source app is created, ask the agent to clone it.
+  *   *Prompt*: "Now, please clone this 'Sunday Mobile Customer Center [RANDOM_ID]' app for me. Name the new one 'Sunday Mobile - QA Environment'."
+rubric:
+- criteria: Tool Used
+  perfect: "`cxas` CLI used correctly for cloning."
+  good: "Used but with wrong params OR required nudge."
+  failed: "Tool not used."
+- criteria: Successful Clone
+  perfect: "Agent successfully orchestrated the clone and returned the new App ID."
+  good: "Agent attempted and needed corrections."
+  failed: "Clone failed."

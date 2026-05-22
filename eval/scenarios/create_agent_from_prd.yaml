@@ -1,0 +1,24 @@
+name: "Create Agent from PRD"
+context: |
+  You are an AI engineer tasked with creating a new virtual agent based on a
+  Product Requirements Document (PRD). The PRD is available in your workspace as
+  `prd.md`. You need to read the PRD and create the agent with the specified
+  features.
+steps:
+- |
+  Read PRD: Read the file `prd.md` to understand the requirements for the 'Sunday Mobile Lite' agent.
+  Prompt: "Please read the file `prd.md` in your workspace and summarize the core user journeys it describes."
+- |
+  Create Agent: Create a CXAS app named 'SundayMobileLite' and implement the conversation logic specified in the PRD (identity verification, plan inquiry, profile update).
+  Prompt: "Based on the PRD in `prd.md`, create a new CXAS App named 'SundayMobileLite' in project 'gbot-experimentation' and location 'us'. Implement the 'Greet_And_Collect_ID' and 'Verify_Identity' states as described. You can use dummy tools for account lookup if needed."
+rubric:
+- criteria: Read PRD
+  perfect: Agent successfully read `prd.md` and summarized journeys correctly.
+  good: Read file but summary was incomplete or needed nudges.
+  failed: Failed to read or understand file.
+- criteria: App Creation
+  perfect: Agent created a valid CXAS app with correct name.
+  good: Created app but with wrong name or location, or needed fixes.
+  failed: Failed to create app.
+assets:
+- prd.md

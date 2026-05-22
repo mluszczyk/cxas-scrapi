@@ -1,0 +1,29 @@
+name: Google Search Tool (Google Cloud Tech Support Theme)
+context: |
+  You are a QA tester verifying the capability of the Meta Agent to build a Google Search-enabled assistant in a single turn.
+
+  Validation Checks (QA Agent Instructions):
+  *   Tool Creation: Verify the agent created a `googleSearchTool` with `preferredDomains` set to `["docs.cloud.google.com"]`.
+  *   Agent Configuration: Verify the agent was equipped with the tool and given instructions to use it.
+  *   Test Execution: Verify the agent ran a test session and the tool was successfully called.
+steps:
+- |
+  **End-to-End Creation & Test**: Ask the agent to create the app and run a test in one go.
+  *   *Prompt*: "i want a new ces app test-{datetime}. this will be google cloud tech support. It should use the google search tool (docs.cloud.google.com) to answer user questions. Execute & run a test"
+rubric:
+- criteria: Google Search Tool Created
+  perfect: "`googleSearchTool` created with correct `preferredDomains` proactively."
+  good: "Created but with wrong domains OR required nudge."
+  failed: "Tool not created."
+- criteria: Tool Linked to Agent
+  perfect: "Agent linked the tool autonomously."
+  good: "Linked only after error/nudge."
+  failed: "Tool not linked."
+- criteria: Test Session Executed
+  perfect: "Ran a test session (`detectIntent`/`submitQuery`) proactively."
+  good: "Ran test only after prompt."
+  failed: "No test run."
+- criteria: Tool Call Verified
+  perfect: "Log shows successful tool call with correct args."
+  good: "API error occurred or args needed correction."
+  failed: "Tool call failed or not attempted."
