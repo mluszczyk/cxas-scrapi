@@ -21,7 +21,7 @@ from typing import Any, Final, List, Optional, Sequence
 
 from google import genai
 
-from eval import exceptions, scenario
+from skill_eval import exceptions, scenario
 
 _DEFAULT_MODEL: Final[str] = "gemini-3.1-pro-preview"
 

@@ -18,7 +18,7 @@ import shutil
 import unittest
 from unittest import mock
 
-from eval import agent_heads
+from skill_eval import agent_heads
 
 
 class ScaffoldingTestAgentTest(unittest.TestCase):
@@ -63,7 +63,7 @@ class AntigravityAgentHeadTest(unittest.TestCase):
     @mock.patch("builtins.open", new_callable=mock.mock_open)
     @mock.patch.object(os, "chmod")
     @mock.patch.object(os, "symlink")
-    @mock.patch("eval.agent_heads.Agent")
+    @mock.patch("skill_eval.agent_heads.Agent")
     @mock.patch.object(os.path, "exists", return_value=True)
     @mock.patch.object(shutil, "copytree")
     @mock.patch("pathlib.Path.exists", return_value=True)
@@ -179,7 +179,7 @@ class AntigravityAgentHeadTest(unittest.TestCase):
     @mock.patch("builtins.open", new_callable=mock.mock_open)
     @mock.patch.object(os, "chmod")
     @mock.patch.object(os, "symlink")
-    @mock.patch("eval.agent_heads.Agent")
+    @mock.patch("skill_eval.agent_heads.Agent")
     @mock.patch.object(os.path, "exists", return_value=True)
     @mock.patch.object(shutil, "copytree")
     @mock.patch("pathlib.Path.exists", return_value=True)
@@ -235,6 +235,7 @@ class AntigravityAgentHeadTest(unittest.TestCase):
         mock_agent_instance.__aenter__.side_effect = assert_env_variables
 
         asyncio.run(head.initialize())
+        asyncio.run(head.close())
 
         # Verify restoration
         self.assertEqual(os.environ.get("PATH"), "/usr/bin")

@@ -19,7 +19,7 @@ from unittest import mock
 
 from absl.testing import absltest
 
-from eval import scenario, scorer
+from skill_eval import scenario, scorer
 
 
 class ScorerTest(absltest.TestCase):

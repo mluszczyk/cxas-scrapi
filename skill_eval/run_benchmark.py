@@ -28,11 +28,11 @@ from typing import List, Optional, Sequence
 
 from absl import app, flags, logging
 
-from eval import agent_heads, benchmark, reporting, scenario, scorer
+from skill_eval import agent_heads, benchmark, reporting, scenario, scorer
 
 _SCENARIO_PATH = flags.DEFINE_string(
     "scenario_path",
-    "eval/scenarios",
+    "skill_eval/scenarios",
     "Path to the scenario .yaml/.yml file or a directory containing them.",
 )
 _TIMEOUT = flags.DEFINE_integer(
@@ -60,7 +60,7 @@ _SCORER_MODEL = flags.DEFINE_string(
 )
 _OUTPUT_DIR = flags.DEFINE_string(
     "output_dir",
-    "eval/reports",
+    "skill_eval/reports",
     "Base directory to store reports. A timestamped subdirectory will be "
     "created automatically for each run.",
 )

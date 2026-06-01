@@ -16,7 +16,7 @@
 
 from absl.testing import absltest, parameterized
 
-from eval import scenario
+from skill_eval import scenario
 
 
 class ScenarioTest(parameterized.TestCase):

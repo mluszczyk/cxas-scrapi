@@ -16,7 +16,7 @@
 
 from typing import Any, List
 
-from eval import benchmark
+from skill_eval import benchmark
 
 
 class TrajectoryExtractor:

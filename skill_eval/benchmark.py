@@ -23,7 +23,7 @@ import time
 from collections.abc import Sequence
 from typing import Any, Callable, Dict, List, Optional
 
-from eval import exceptions, scenario, scorer
+from skill_eval import exceptions, scenario, scorer
 
 
 class ExecutionStatus(enum.Enum):

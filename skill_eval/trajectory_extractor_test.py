@@ -14,7 +14,7 @@
 
 import unittest
 
-from eval import benchmark, trajectory_extractor
+from skill_eval import benchmark, trajectory_extractor
 
 
 class MockToolCall:

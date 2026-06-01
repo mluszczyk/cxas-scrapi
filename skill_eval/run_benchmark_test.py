@@ -24,7 +24,7 @@ from unittest import mock
 from absl import flags
 from absl.testing import absltest, flagsaver
 
-from eval import benchmark, run_benchmark, scenario
+from skill_eval import benchmark, run_benchmark, scenario
 
 # Parse flags to avoid UnparsedFlagAccessError when running via pytest
 try:
@@ -143,13 +143,13 @@ class BenchmarkOrchestratorTest(absltest.TestCase):
 
     @flagsaver.flagsaver(scenario_path="non_existent_fake_scenario_123.yaml")
     def test_main_async_raises_value_error_on_missing_scenario(self):
-        with mock.patch("eval.run_benchmark._validate_environment"):
+        with mock.patch("skill_eval.run_benchmark._validate_environment"):
             with self.assertRaisesRegex(ValueError, "Scenario path not found"):
                 asyncio.run(run_benchmark.main_async())
 
     @mock.patch("os.path.isdir", return_value=True)
     @mock.patch("os.listdir", return_value=["s1.yaml", "s2.yaml"])
-    @mock.patch("eval.scenario.Scenario.from_file")
+    @mock.patch("skill_eval.scenario.Scenario.from_file")
     def test_main_async_fails_on_duplicate_scenario_names(
         self, mock_from_file, _mock_listdir, _mock_isdir
     ):
@@ -161,7 +161,7 @@ class BenchmarkOrchestratorTest(absltest.TestCase):
 
         temp_dir = self.create_tempdir().full_path
         with flagsaver.flagsaver(scenario_path="fake_dir", output_dir=temp_dir):
-            with mock.patch("eval.run_benchmark._validate_environment"):
+            with mock.patch("skill_eval.run_benchmark._validate_environment"):
                 with self.assertRaises(SystemExit):
                     asyncio.run(run_benchmark.main_async())
 

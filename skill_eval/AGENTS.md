@@ -5,7 +5,7 @@ Rules:
 *   engineering excellency: unit test coverage, clean interfaces, the state is
     cleanly and explicitly represented, modular code, OOP, fail fast.
 
-Every Git commit or Pull Request (PR) description should contain a summary of the evaluation results. Local visual HTML reports are compiled under the `eval/reports/` directory. Before providing any link to the user, you MUST always verify the
+Every Git commit or Pull Request (PR) description should contain a summary of the evaluation results. Local visual HTML reports are compiled under the `skill_eval/reports/` directory. Before providing any link to the user, you MUST always verify the
 existence and content of that file (e.g. check index.html). No linter warnings
 are allowed.
 

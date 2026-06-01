@@ -18,7 +18,7 @@ import json
 
 from absl.testing import absltest
 
-from eval import benchmark, reporting, scorer
+from skill_eval import benchmark, reporting, scorer
 
 
 class ReportingTest(absltest.TestCase):

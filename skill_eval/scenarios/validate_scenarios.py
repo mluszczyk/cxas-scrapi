@@ -22,10 +22,10 @@ from collections.abc import Sequence
 from absl import app
 
 try:
-    from eval import scenario
+    from skill_eval import scenario
 except ImportError:
     sys.path.append(str(pathlib.Path(__file__).resolve().parents[2]))
-    from eval import scenario
+    from skill_eval import scenario
 
 
 def main(argv: Sequence[str]) -> None:

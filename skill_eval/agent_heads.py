@@ -33,7 +33,7 @@ from absl import logging
 from google.antigravity import Agent, LocalAgentConfig
 from google.antigravity.hooks import policy
 
-from eval import benchmark, scenario, trajectory_extractor
+from skill_eval import benchmark, scenario, trajectory_extractor
 
 
 class ScaffoldingTestAgent(benchmark.BaseAgentHead):
@@ -188,8 +188,8 @@ class AntigravityAgentHead(benchmark.BaseAgentHead):
         self._trajectory_extractor = trajectory_extractor.TrajectoryExtractor()
 
         # Resolve absolute paths to the root repository directory
-        eval_dir = pathlib.Path(__file__).parent.resolve()
-        root_repo_dir = eval_dir.parent.resolve()
+        skill_eval_dir = pathlib.Path(__file__).parent.resolve()
+        root_repo_dir = skill_eval_dir.parent.resolve()
 
         os.makedirs(self._workspace_dir, exist_ok=True)
 

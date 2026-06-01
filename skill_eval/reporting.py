@@ -25,7 +25,7 @@ from typing import Any, Optional, Sequence
 
 import markdown
 
-from eval import benchmark, scenario
+from skill_eval import benchmark, scenario
 
 _TRAJECTORY_URL_TEMPLATE = os.environ.get("TRAJECTORY_VIEWER_URL", "")
 

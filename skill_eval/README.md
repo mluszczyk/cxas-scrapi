@@ -1,4 +1,4 @@
-# Agent Evaluation Framework (`eval/`)
+# Agent Evaluation Framework (`skill_eval/`)
 
 Evaluation benchmark framework for CXAS building using Scrapi CLI and skills.
 

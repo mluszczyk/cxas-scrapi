@@ -25,7 +25,7 @@ Each benchmark scenario YAML file defines the following fields:
 
 ## 3. Scenario Validation
 
-To ensure scenario configurations are formatted correctly and all referenced assets exist, run the validator script from the `eval/` directory:
+To ensure scenario configurations are formatted correctly and all referenced assets exist, run the validator script from the `skill_eval/` directory:
 
 ```bash
 python3 scenarios/validate_scenarios.py
