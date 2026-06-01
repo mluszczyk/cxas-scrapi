@@ -48,7 +48,8 @@ def _load_tool_config(file_path: Path) -> tuple[Optional[dict], Optional[Path]]:
     if not json_path.exists():
         return None, json_path
     try:
-        return json.loads(json_path.read_text()), json_path
+        data = json.loads(json_path.read_text())
+        return data if isinstance(data, dict) else None, json_path
     except (json.JSONDecodeError, OSError):
         return None, json_path
 
@@ -511,8 +512,8 @@ class MissingToolDescriptionInJSON(Rule):
     id = "T012"
     name = "tool-json-missing-description"
     description = (
-        "Tool JSON configuration must include pythonFunction.description "
-        "or widgetTool.description."
+        "Tool JSON configuration must include top-level description or "
+        "nested tool type description."
     )
     default_severity = Severity.ERROR
 
@@ -523,30 +524,40 @@ class MissingToolDescriptionInJSON(Rule):
         if not tool_config:
             return []
 
-        python_function = tool_config.get("pythonFunction")
-        widget_tool = tool_config.get("widgetTool")
+        tool_types = [
+            "clientFunction",
+            "openApiTool",
+            "googleSearchTool",
+            "connectorTool",
+            "dataStoreTool",
+            "pythonFunction",
+            "mcpTool",
+            "fileSearchTool",
+            "systemTool",
+            "agentTool",
+            "widgetTool",
+        ]
 
-        if python_function is not None:
-            description = python_function.get("description")
-            field_name = "pythonFunction.description"
-            fix_msg = (
-                "Add a 'description' key to the 'pythonFunction' "
-                "object in the tool's JSON file."
-            )
-        elif widget_tool is not None:
-            description = widget_tool.get("description")
-            field_name = "widgetTool.description"
-            fix_msg = (
-                "Add a 'description' key to the 'widgetTool' "
-                "object in the tool's JSON file."
-            )
-        else:
-            description = None
-            field_name = "pythonFunction or widgetTool description"
-            fix_msg = (
-                "Add a 'description' field within the 'pythonFunction' "
-                "or 'widgetTool' object in the tool's JSON file."
-            )
+        description = tool_config.get("description")
+        field_name = "description"
+        fix_msg = "Add a 'description' key to the tool's JSON file."
+
+        active_tool_type = None
+        for t in tool_types:
+            if tool_config.get(t) is not None:
+                active_tool_type = t
+                break
+
+        if not description or not str(description).strip():
+            if active_tool_type is not None:
+                tool_obj = tool_config.get(active_tool_type)
+                if isinstance(tool_obj, dict):
+                    description = tool_obj.get("description")
+                field_name = f"{active_tool_type}.description"
+                fix_msg = (
+                    f"Add a 'description' key to the '{active_tool_type}' "
+                    f"object in the tool's JSON file."
+                )
 
         if not description or not str(description).strip():
             rel = str(json_path.relative_to(context.project_root))
@@ -562,4 +573,62 @@ class MissingToolDescriptionInJSON(Rule):
                     fix=fix_msg,
                 )
             ]
+        return []
+
+
+@rule("tools")
+class ToolConfigInvalid(Rule):
+    id = "T013"
+    name = "tool-config-invalid"
+    description = (
+        "Tool JSON configuration must be a valid JSON object/dictionary"
+    )
+    default_severity = Severity.ERROR
+
+    def check(
+        self, file_path: Path, content: str, context: LintContext
+    ) -> list[LintResult]:
+        if file_path.suffix == ".json":
+            json_path = file_path
+        else:
+            tool_dir = file_path.parent.parent
+            json_path = tool_dir / f"{tool_dir.name}.json"
+
+        if not json_path.exists():
+            return []
+
+        rel = str(json_path.relative_to(context.project_root))
+
+        try:
+            data = json.loads(json_path.read_text())
+        except json.JSONDecodeError as e:
+            return [
+                self.make_result(
+                    file=rel,
+                    message=f"Tool JSON configuration has invalid syntax: {e}",
+                )
+            ]
+        except OSError as e:
+            return [
+                self.make_result(
+                    file=rel,
+                    message=f"Failed to read tool JSON configuration: {e}",
+                )
+            ]
+
+        if not isinstance(data, dict):
+            return [
+                self.make_result(
+                    file=rel,
+                    message=(
+                        "Tool JSON configuration must be a JSON "
+                        f"dictionary/object, got {type(data).__name__}"
+                    ),
+                    fix=(
+                        "Ensure the configuration file starts with '{' "
+                        "and ends with '}'"
+                    ),
+                )
+            ]
+
         return []
