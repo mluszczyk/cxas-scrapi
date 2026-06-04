@@ -1,0 +1,5 @@
+{
+  "name": "projects/gbot-test-mlus/locations/us/apps/broken-app-{uuid}",
+  "displayName": "Broken App",
+  "rootAgent": "projects/gbot-test-mlus/locations/us/apps/broken-app-{uuid}/agents/broken_agent"
+}
