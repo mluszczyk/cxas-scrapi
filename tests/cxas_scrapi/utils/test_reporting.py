@@ -14,7 +14,7 @@
 
 import json
 import os
-from unittest.mock import mock_open, patch
+from unittest.mock import MagicMock, mock_open, patch
 
 import pandas as pd
 
@@ -443,6 +443,7 @@ def test_run_all_evals_filtering(
     mock_eval_utils.return_value.load_golden_evals_from_yaml.return_value = []
 
     run_all_evals(
+        creds=MagicMock(),
         app_name="projects/p",
         filter_files=["test1.yaml"],
         goldens_dir="evals/goldens/",
@@ -485,6 +486,7 @@ def test_run_all_evals_substring_filtering(
     mock_eval_utils.return_value.load_golden_evals_from_yaml.return_value = []
 
     run_all_evals(
+        creds=MagicMock(),
         app_name="projects/p",
         filter_files=["ERROR"],
         goldens_dir="evals/goldens/",
@@ -547,6 +549,7 @@ def test_run_all_evals_tag_filtering(
     mock_eval_client.update_evaluation.return_value.name = "mock_name"
 
     run_all_evals(
+        creds=MagicMock(),
         app_name="projects/p",
         filter_tags=["tag1"],
         goldens_dir="evals/goldens/",
@@ -589,8 +592,10 @@ def test_run_all_evals_include_filtering(
     ]
     mock_yaml_load.return_value = [{"name": "sim1"}]
 
+    mock_creds = MagicMock()
     # Call with ONLY sims
     run_all_evals(
+        creds=mock_creds,
         app_name="projects/p",
         include=["sims"],
         goldens_dir="evals/goldens/",
@@ -600,7 +605,7 @@ def test_run_all_evals_include_filtering(
 
     # Assert SimulationEvals was instantiated and run
     mock_sim_evals.assert_called_once_with(
-        app_name="projects/p", rate_limiter=None
+        app_name="projects/p", creds=mock_creds, rate_limiter=None
     )
     mock_sim_evals.return_value.run_simulations.assert_called_once()
 
@@ -637,8 +642,10 @@ def test_run_all_evals_include_tools(
         {"name": "case1"}
     ]
 
+    mock_creds = MagicMock()
     # Call with ONLY tools
     run_all_evals(
+        creds=mock_creds,
         app_name="projects/p",
         include=["tools"],
         goldens_dir="evals/goldens/",
@@ -647,7 +654,7 @@ def test_run_all_evals_include_tools(
     )
 
     # Assert ToolEvals was instantiated and run
-    mock_tool_evals.assert_called_once_with(app_name="projects/p")
+    mock_tool_evals.assert_called_once_with(app_name="projects/p", creds=mock_creds)
     mock_tool_evals.return_value.run_tool_tests.assert_called_once()
 
     # Assert others were NOT called/instantiated
@@ -679,6 +686,7 @@ def test_run_all_evals_include_callbacks(
 
     # Call with ONLY callbacks
     run_all_evals(
+        creds=MagicMock(),
         app_name="projects/p",
         include=["callbacks"],
         goldens_dir="evals/goldens/",
@@ -726,7 +734,9 @@ def test_run_all_evals_dict_based_simulations(
         ["evals/simulations/sims.yaml"],
     ]
 
+    mock_creds = MagicMock()
     run_all_evals(
+        creds=mock_creds,
         app_name="projects/p",
         include=["sims"],
         simulation_dir="evals/simulations/",
@@ -734,7 +744,7 @@ def test_run_all_evals_dict_based_simulations(
 
     # Verify SimulationEvals was instantiated and run
     mock_sim_evals.assert_called_once_with(
-        app_name="projects/p", rate_limiter=None
+        app_name="projects/p", creds=mock_creds, rate_limiter=None
     )
     mock_sim_evals.return_value.run_simulations.assert_called_once_with(
         [
@@ -901,6 +911,7 @@ def test_run_all_evals_writes_timestamped_files(
     timestamp = "20260622_171403"
 
     run_all_evals(
+        creds=MagicMock(),
         app_name="projects/p",
         include=["sims"],
         simulation_dir=str(sims_dir),

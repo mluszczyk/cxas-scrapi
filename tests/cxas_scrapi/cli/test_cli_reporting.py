@@ -92,6 +92,7 @@ def test_combined_evals_report_cmd(tmp_path):
             burst_noise_files=None,
             use_tool_fakes=False,
             timestamp=None,
+            creds=None,
         )
 
 
@@ -149,6 +150,7 @@ def test_combined_evals_report_cmd_with_modality_and_runs(tmp_path):
             burst_noise_files=None,
             use_tool_fakes=False,
             timestamp=None,
+            creds=None,
         )
 
 
@@ -211,4 +213,5 @@ def test_combined_evals_report_cmd_timestamped(mock_datetime, tmp_path):
             burst_noise_files=None,
             use_tool_fakes=False,
             timestamp="20260622_171403",
+            creds=None,
         )

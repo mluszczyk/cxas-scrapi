@@ -1437,6 +1437,7 @@ def generate_combined_report_from_dir(
     burst_noise_files: list[str] | None = None,
     use_tool_fakes: bool = False,
     timestamp: str | None = None,
+    creds: Any = None,
 ) -> str:
     """Load results from directory and generate combined HTML report.
 
@@ -1480,8 +1481,11 @@ def generate_combined_report_from_dir(
     resolved_timestamp = timestamp
 
     if run:
-        run_results = run_all_evals(
+        if creds is None:
+            raise ValueError("creds must be provided if run=True")
+        run_results = evals_runner.run_all_evals(
             app_name=app_name,
+            creds=creds,
             app_dir=app_dir,
             tool_test_file=tool_test_file,
             goldens_dir=goldens_dir,
@@ -1667,6 +1671,7 @@ def generate_combined_report_from_dir(
 
 def run_all_evals(
     app_name: str,
+    creds: Any,
     app_dir: str | None = None,
     tool_test_file: str | None = None,
     goldens_dir: str | None = None,
@@ -1694,6 +1699,7 @@ def run_all_evals(
 
     Args:
       app_name: CX Agent Studio (CXAS) agent resource name.
+      creds: Credentials object.
       app_dir: Directory containing CX Agent Studio (CXAS) agent code.
       tool_test_file: Path to tool tests definition file.
       goldens_dir: Directory containing golden test cases.
@@ -1719,6 +1725,7 @@ def run_all_evals(
     """
     return evals_runner.run_all_evals(
         app_name=app_name,
+        creds=creds,
         modality=modality,
         sim_user_model=sim_user_model,
         eval_model=eval_model,

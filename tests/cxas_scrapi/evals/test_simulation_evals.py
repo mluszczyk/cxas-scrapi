@@ -187,7 +187,7 @@ def test_user_simulator(mock_llm_conv_class, mock_sessions_class):
     app_name = "projects/test/locations/us/apps/123-abc"
     with patch("cxas_scrapi.evals.simulation_evals.GeminiGenerate"):
         with patch("cxas_scrapi.core.apps.AgentServiceClient"):
-            simulator = SimulationEvals(app_name=app_name)
+            simulator = SimulationEvals(app_name=app_name, creds=MagicMock())
 
     # Run the simulation
     test_case = {"steps": []}
@@ -269,7 +269,7 @@ def test_user_simulator_audio(mock_llm_conv_class, mock_sessions_class):
     app_name = "projects/test/locations/us/apps/123-abc"
     with patch("cxas_scrapi.evals.simulation_evals.GeminiGenerate"):
         with patch("cxas_scrapi.core.apps.AgentServiceClient"):
-            simulator = SimulationEvals(app_name=app_name)
+            simulator = SimulationEvals(app_name=app_name, creds=MagicMock())
 
     test_case = {"steps": []}
     simulator.simulate_conversation(
@@ -359,7 +359,7 @@ def test_user_simulator_audio_with_eval_enabled(
     app_name = "projects/test/locations/us/apps/123-abc"
     with patch("cxas_scrapi.evals.simulation_evals.GeminiGenerate"):
         with patch("cxas_scrapi.core.apps.AgentServiceClient"):
-            simulator = SimulationEvals(app_name=app_name)
+            simulator = SimulationEvals(app_name=app_name, creds=MagicMock())
 
     test_case = {"steps": []}
     simulator.simulate_conversation(
@@ -416,7 +416,7 @@ def test_parse_agent_response_standard():
     app_name = "projects/test/locations/us/apps/123-abc"
     with patch("cxas_scrapi.evals.simulation_evals.GeminiGenerate"):
         with patch("cxas_scrapi.core.apps.AgentServiceClient"):
-            simulator = SimulationEvals(app_name=app_name)
+            simulator = SimulationEvals(app_name=app_name, creds=MagicMock())
 
     with patch(
         "cxas_scrapi.evals.simulation_evals.Sessions._expand_pb_struct",
@@ -451,7 +451,7 @@ def test_parse_agent_response_agent_transfer():
     app_name = "projects/test/locations/us/apps/123-abc"
     with patch("cxas_scrapi.evals.simulation_evals.GeminiGenerate"):
         with patch("cxas_scrapi.core.apps.AgentServiceClient"):
-            simulator = SimulationEvals(app_name=app_name)
+            simulator = SimulationEvals(app_name=app_name, creds=MagicMock())
 
     (
         _agent_text,
@@ -487,7 +487,7 @@ def test_parse_agent_response_custom_payload():
     app_name = "projects/test/locations/us/apps/123-abc"
     with patch("cxas_scrapi.evals.simulation_evals.GeminiGenerate"):
         with patch("cxas_scrapi.core.apps.AgentServiceClient"):
-            simulator = SimulationEvals(app_name=app_name)
+            simulator = SimulationEvals(app_name=app_name, creds=MagicMock())
 
     with patch(
         "cxas_scrapi.evals.simulation_evals.Sessions._expand_pb_struct",
@@ -521,7 +521,7 @@ def test_parse_agent_response_diagnostic():
     app_name = "projects/test/locations/us/apps/123-abc"
     with patch("cxas_scrapi.evals.simulation_evals.GeminiGenerate"):
         with patch("cxas_scrapi.core.apps.AgentServiceClient"):
-            simulator = SimulationEvals(app_name=app_name)
+            simulator = SimulationEvals(app_name=app_name, creds=MagicMock())
 
     (
         agent_text,
@@ -542,7 +542,7 @@ def test_evaluate_expectations():
     ) as mock_gemini_client_class:
         mock_gemini_client = mock_gemini_client_class.return_value
         with patch("cxas_scrapi.core.apps.AgentServiceClient"):
-            simulator = SimulationEvals(app_name=app_name)
+            simulator = SimulationEvals(app_name=app_name, creds=MagicMock())
 
     # Setup mock output for Gemini
     mock_output = MagicMock()
@@ -667,7 +667,7 @@ def test_simulation_evals_add_agent_text():
     app_name = "projects/p/locations/l/apps/a"
     with patch("cxas_scrapi.evals.simulation_evals.GeminiGenerate"):
         with patch("cxas_scrapi.core.apps.AgentServiceClient"):
-            evals = SimulationEvals(app_name=app_name)
+            evals = SimulationEvals(app_name=app_name, creds=MagicMock())
     turn = Turn(tool_calls=[])
     evals._add_agent_text(turn, "Hello")
     assert turn.agent == "Hello"
@@ -679,7 +679,7 @@ def test_simulation_evals_match_tool_response():
     app_name = "projects/p/locations/l/apps/a"
     with patch("cxas_scrapi.evals.simulation_evals.GeminiGenerate"):
         with patch("cxas_scrapi.core.apps.AgentServiceClient"):
-            evals = SimulationEvals(app_name=app_name)
+            evals = SimulationEvals(app_name=app_name, creds=MagicMock())
     tc = ToolCall(action="my_tool", args={})
     turn = Turn(tool_calls=[tc])
     evals._match_tool_response(turn, "my_tool", {"res": "ok"})
@@ -690,7 +690,7 @@ def test_simulation_evals_get_turns_from_local_trace():
     app_name = "projects/p/locations/l/apps/a"
     with patch("cxas_scrapi.evals.simulation_evals.GeminiGenerate"):
         with patch("cxas_scrapi.core.apps.AgentServiceClient"):
-            evals = SimulationEvals(app_name=app_name)
+            evals = SimulationEvals(app_name=app_name, creds=MagicMock())
     trace = [
         "User: Hi",
         "Agent Text: Hello there",
@@ -710,7 +710,7 @@ def test_simulation_evals_process_platform_chunk_text():
     app_name = "projects/p/locations/l/apps/a"
     with patch("cxas_scrapi.evals.simulation_evals.GeminiGenerate"):
         with patch("cxas_scrapi.core.apps.AgentServiceClient"):
-            evals = SimulationEvals(app_name=app_name)
+            evals = SimulationEvals(app_name=app_name, creds=MagicMock())
     turn = Turn(tool_calls=[])
     evals._process_platform_chunk({"text": "Hello"}, turn)
     assert turn.agent == "Hello"
@@ -720,7 +720,7 @@ def test_simulation_evals_process_platform_chunk_tool_call():
     app_name = "projects/p/locations/l/apps/a"
     with patch("cxas_scrapi.evals.simulation_evals.GeminiGenerate"):
         with patch("cxas_scrapi.core.apps.AgentServiceClient"):
-            evals = SimulationEvals(app_name=app_name)
+            evals = SimulationEvals(app_name=app_name, creds=MagicMock())
     turn = Turn(tool_calls=[])
     chunk = {"tool_call": {"display_name": "my_tool", "args": {"a": 1}}}
     evals._process_platform_chunk(chunk, turn)
@@ -732,7 +732,7 @@ def test_simulation_evals_process_platform_chunk_agent_transfer():
     app_name = "projects/p/locations/l/apps/a"
     with patch("cxas_scrapi.evals.simulation_evals.GeminiGenerate"):
         with patch("cxas_scrapi.core.apps.AgentServiceClient"):
-            evals = SimulationEvals(app_name=app_name)
+            evals = SimulationEvals(app_name=app_name, creds=MagicMock())
     turn = Turn(tool_calls=[])
     chunk = {"agent_transfer": {"display_name": "live_agent"}}
     evals._process_platform_chunk(chunk, turn)
@@ -745,7 +745,7 @@ def test_simulation_evals_process_platform_chunk_payload():
     app_name = "projects/p/locations/l/apps/a"
     with patch("cxas_scrapi.evals.simulation_evals.GeminiGenerate"):
         with patch("cxas_scrapi.core.apps.AgentServiceClient"):
-            evals = SimulationEvals(app_name=app_name)
+            evals = SimulationEvals(app_name=app_name, creds=MagicMock())
     turn = Turn(tool_calls=[])
     chunk = {"payload": {"key": "value"}}
     evals._process_platform_chunk(chunk, turn)
@@ -756,7 +756,7 @@ def test_simulation_evals_parse_platform_messages():
     app_name = "projects/p/locations/l/apps/a"
     with patch("cxas_scrapi.evals.simulation_evals.GeminiGenerate"):
         with patch("cxas_scrapi.core.apps.AgentServiceClient"):
-            evals = SimulationEvals(app_name=app_name)
+            evals = SimulationEvals(app_name=app_name, creds=MagicMock())
     messages = [
         {"role": "user", "chunks": [{"text": "Hello"}]},
         {"role": "agent", "chunks": [{"text": "Hi! How can I help?"}]},
@@ -772,7 +772,7 @@ def test_simulation_evals_get_turns_fallback():
     app_name = "projects/p/locations/l/apps/a"
     with patch("cxas_scrapi.evals.simulation_evals.GeminiGenerate"):
         with patch("cxas_scrapi.core.apps.AgentServiceClient"):
-            evals = SimulationEvals(app_name=app_name)
+            evals = SimulationEvals(app_name=app_name, creds=MagicMock())
     res = {
         "session_id": "sid",
         "detailed_trace": ["User: Hi", "Agent Text: Hello"],
@@ -790,7 +790,7 @@ def test_simulation_evals_send_request_with_retry_success():
     app_name = "projects/p/locations/l/apps/a"
     with patch("cxas_scrapi.evals.simulation_evals.GeminiGenerate"):
         with patch("cxas_scrapi.core.apps.AgentServiceClient"):
-            evals = SimulationEvals(app_name=app_name)
+            evals = SimulationEvals(app_name=app_name, creds=MagicMock())
 
     evals.sessions_client = MagicMock()
     evals.sessions_client.run.side_effect = [
@@ -809,7 +809,7 @@ def test_simulation_evals_send_request_with_retry_failure():
     app_name = "projects/p/locations/l/apps/a"
     with patch("cxas_scrapi.evals.simulation_evals.GeminiGenerate"):
         with patch("cxas_scrapi.core.apps.AgentServiceClient"):
-            evals = SimulationEvals(app_name=app_name)
+            evals = SimulationEvals(app_name=app_name, creds=MagicMock())
 
     evals.sessions_client = MagicMock()
     evals.sessions_client.run.side_effect = Exception("Permanent")
@@ -839,7 +839,7 @@ def test_simulation_evals_prepare_simulation_jobs():
     app_name = "projects/p/locations/l/apps/a"
     with patch("cxas_scrapi.evals.simulation_evals.GeminiGenerate"):
         with patch("cxas_scrapi.core.apps.AgentServiceClient"):
-            evals = SimulationEvals(app_name=app_name)
+            evals = SimulationEvals(app_name=app_name, creds=MagicMock())
 
     test_cases = [{"name": "tc1"}, {"name": "tc2"}]
     jobs = evals._prepare_simulation_jobs(test_cases, runs=2)
@@ -854,7 +854,7 @@ def test_simulation_evals_aggregate_simulation_results_parallel():
     app_name = "projects/p/locations/l/apps/a"
     with patch("cxas_scrapi.evals.simulation_evals.GeminiGenerate"):
         with patch("cxas_scrapi.core.apps.AgentServiceClient"):
-            evals = SimulationEvals(app_name=app_name)
+            evals = SimulationEvals(app_name=app_name, creds=MagicMock())
 
     evals._run_single_simulation_job = MagicMock(return_value={"status": "ok"})
     jobs = [({"name": "tc1"}, 0), ({"name": "tc1"}, 1)]
@@ -879,7 +879,7 @@ def test_simulation_evals_get_turns_from_platform(mock_ch_class):
     app_name = "projects/p/locations/l/apps/a"
     with patch("cxas_scrapi.evals.simulation_evals.GeminiGenerate"):
         with patch("cxas_scrapi.core.apps.AgentServiceClient"):
-            evals = SimulationEvals(app_name=app_name)
+            evals = SimulationEvals(app_name=app_name, creds=MagicMock())
 
     mock_ch = mock_ch_class.return_value
     mock_conv = MagicMock()
@@ -1078,7 +1078,7 @@ def test_simulation_evals_accumulates_vars(
     app_name = "projects/test/locations/us/apps/123-abc"
     with patch("cxas_scrapi.evals.simulation_evals.GeminiGenerate"):
         with patch("cxas_scrapi.core.apps.AgentServiceClient"):
-            simulator = SimulationEvals(app_name=app_name)
+            simulator = SimulationEvals(app_name=app_name, creds=MagicMock())
 
     test_case = {"steps": []}
     simulator.simulate_conversation(
@@ -1132,7 +1132,7 @@ def test_simulation_evals_adds_final_agent_response_on_session_ended(
     app_name = "projects/test/locations/us/apps/123-abc"
     with patch("cxas_scrapi.evals.simulation_evals.GeminiGenerate"):
         with patch("cxas_scrapi.core.apps.AgentServiceClient"):
-            simulator = SimulationEvals(app_name=app_name)
+            simulator = SimulationEvals(app_name=app_name, creds=MagicMock())
 
     test_case = {"steps": []}
     with patch(
@@ -1156,16 +1156,20 @@ def test_simulation_evals_adds_final_agent_response_on_session_ended(
 @patch("cxas_scrapi.evals.simulation_evals.Sessions")
 def test_simulation_evals_init_with_rate_limiter(mock_sessions):
     mock_rate_limiter = MagicMock()
+    mock_creds = MagicMock()
     app_name = "projects/test/locations/us/apps/123-abc"
     with patch("cxas_scrapi.evals.simulation_evals.GeminiGenerate"):
         with patch("cxas_scrapi.core.apps.AgentServiceClient"):
             _ = SimulationEvals(
-                app_name=app_name, rate_limiter=mock_rate_limiter
+                app_name=app_name,
+                creds=mock_creds,
+                rate_limiter=mock_rate_limiter,
             )
 
     mock_sessions.assert_called_once_with(
         app_name,
         rate_limiter=mock_rate_limiter,
+        creds=mock_creds,
     )
 
 
@@ -1190,7 +1194,7 @@ def test_simulation_evals_simulate_conversation_use_tool_fakes(
     app_name = "projects/test/locations/us/apps/123-abc"
     with patch("cxas_scrapi.evals.simulation_evals.GeminiGenerate"):
         with patch("cxas_scrapi.core.apps.AgentServiceClient"):
-            simulator = SimulationEvals(app_name=app_name)
+            simulator = SimulationEvals(app_name=app_name, creds=MagicMock())
 
     test_case = {"steps": []}
     simulator.simulate_conversation(
@@ -1218,7 +1222,7 @@ def test_simulation_evals_run_simulations_use_tool_fakes(mock_sessions):
     app_name = "projects/test/locations/us/apps/123-abc"
     with patch("cxas_scrapi.evals.simulation_evals.GeminiGenerate"):
         with patch("cxas_scrapi.core.apps.AgentServiceClient"):
-            evals = SimulationEvals(app_name=app_name)
+            evals = SimulationEvals(app_name=app_name, creds=MagicMock())
 
     evals._run_single_simulation_job = MagicMock(return_value={"status": "ok"})
     test_cases = [{"name": "tc1"}]
@@ -1256,7 +1260,7 @@ def test_simulation_evals_run_simulations_use_tool_fakes_parallel(
     app_name = "projects/test/locations/us/apps/123-abc"
     with patch("cxas_scrapi.evals.simulation_evals.GeminiGenerate"):
         with patch("cxas_scrapi.core.apps.AgentServiceClient"):
-            evals = SimulationEvals(app_name=app_name)
+            evals = SimulationEvals(app_name=app_name, creds=MagicMock())
 
     evals._run_single_simulation_job = MagicMock(return_value={"status": "ok"})
     test_cases = [{"name": "tc1"}, {"name": "tc2"}]
@@ -1293,7 +1297,7 @@ def test_simulation_evals_run_simulations_capture_agent_audio(mock_sessions):
     app_name = "projects/test/locations/us/apps/123-abc"
     with patch("cxas_scrapi.evals.simulation_evals.GeminiGenerate"):
         with patch("cxas_scrapi.core.apps.AgentServiceClient"):
-            evals = SimulationEvals(app_name=app_name)
+            evals = SimulationEvals(app_name=app_name, creds=MagicMock())
 
     evals._run_single_simulation_job = MagicMock(return_value={"status": "ok"})
     test_cases = [

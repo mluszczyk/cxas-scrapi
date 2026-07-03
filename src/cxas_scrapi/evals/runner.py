@@ -19,6 +19,7 @@ import json
 import os
 import time
 
+from typing import Any
 from google.cloud.ces_v1beta.types import RunEvaluationOperationMetadata
 
 from cxas_scrapi.core.evaluations import Evaluations
@@ -42,6 +43,7 @@ def _chunked(lst, n):
 
 def run_all_evals(
     app_name: str,
+    creds: Any,
     modality: str = "text",
     sim_user_model: str | None = None,
     eval_model: str | None = None,
@@ -82,8 +84,8 @@ def run_all_evals(
         if not goldens_dir:
             goldens_dir = "evals/goldens/"
         if app_name and os.path.exists(goldens_dir):
-            eval_client = Evaluations(app_name=app_name)
-            eval_utils = EvalUtils(app_name=app_name)
+            eval_client = Evaluations(app_name=app_name, creds=creds)
+            eval_utils = EvalUtils(app_name=app_name, creds=creds)
 
             if os.path.isdir(goldens_dir):
                 golden_files = glob.glob(os.path.join(goldens_dir, "*.yaml"))
@@ -141,7 +143,7 @@ def run_all_evals(
         if not tool_test_file:
             tool_test_file = "evals/tool_tests/"
         if app_name and os.path.exists(tool_test_file):
-            tool_evals = ToolEvals(app_name=app_name)
+            tool_evals = ToolEvals(app_name=app_name, creds=creds)
 
             if os.path.isdir(tool_test_file):
                 tool_files = glob.glob(os.path.join(tool_test_file, "*.yaml"))
@@ -214,7 +216,7 @@ def run_all_evals(
 
             if sim_files:
                 sim_evals = SimulationEvals(
-                    app_name=app_name, rate_limiter=rate_limiter
+                    app_name=app_name, creds=creds, rate_limiter=rate_limiter
                 )
                 test_cases = []
                 for sf in sim_files:

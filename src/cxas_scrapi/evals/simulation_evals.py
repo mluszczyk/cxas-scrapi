@@ -399,17 +399,22 @@ class SimulationEvals(Apps):
     def __init__(
         self,
         app_name: str,
+        creds: Any,
         rate_limiter: RateLimiter | None = None,
         **kwargs,
     ):
         self.app_name = app_name
         project_id = app_name.split("/")[1]
         location = app_name.split("/")[3]
-        super().__init__(project_id=project_id, location=location, **kwargs)
-        self.sessions_client = Sessions(
-            app_name, rate_limiter=rate_limiter, **kwargs
+        super().__init__(
+            project_id=project_id, location=location, creds=creds, **kwargs
         )
-        self.tools_map = Tools(app_name=app_name, **kwargs).get_tools_map()
+        self.sessions_client = Sessions(
+            app_name, rate_limiter=rate_limiter, creds=creds, **kwargs
+        )
+        self.tools_map = Tools(
+            app_name=app_name, creds=creds, **kwargs
+        ).get_tools_map()
 
         # Vertex AI requires a specific region (e.g. global), whereas CXAS
         # Apps use 'us' or 'eu'

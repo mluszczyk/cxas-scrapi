@@ -604,6 +604,12 @@ def combined_evals_report_cmd(args: argparse.Namespace) -> None:
     sim_parallel = getattr(args, "sim_parallel", 5)
     golden_timeout = getattr(args, "golden_timeout", 600)
 
+    creds = None
+    if args.run:
+        from cxas_scrapi.core.common import Common  # noqa: PLC0415
+        common = Common(app_name=args.app_name)
+        creds = common.creds
+
     actual_output_path = generate_combined_report_from_dir(
         output_dir=output_dir,
         golden_run=args.golden_run,
@@ -629,19 +635,22 @@ def combined_evals_report_cmd(args: argparse.Namespace) -> None:
         else None,
         use_tool_fakes=getattr(args, "use_tool_fakes", False),
         timestamp=timestamp,
+        creds=creds,
     )
     print(f"Combined report generated at {actual_output_path}")
 
 
 def test_tools(args: argparse.Namespace) -> None:
     """Handles the 'test-tools' command."""
+    from cxas_scrapi.core.common import Common  # noqa: PLC0415
     from cxas_scrapi.evals.tool_evals import ToolEvals
 
     print(
         f"Running tool tests for App: {args.app_name} "
         f"using file: {args.test_file}"
     )
-    tool_evals = ToolEvals(app_name=args.app_name)
+    common = Common(app_name=args.app_name)
+    tool_evals = ToolEvals(app_name=args.app_name, creds=common.creds)
 
     try:
         test_cases = tool_evals.load_tool_test_cases_from_file(args.test_file)

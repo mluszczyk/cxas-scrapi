@@ -98,7 +98,7 @@ class ToolEvals:
     def __init__(
         self,
         app_name: str,
-        creds: Any = None,
+        creds: Any,
         user_agent_extension: str | None = None,
     ):
         """Initializes the ToolEvals class.
@@ -106,7 +106,7 @@ class ToolEvals:
         Args:
             app_name: CXAS App name
                 (projects/{project}/locations/{location}/apps/{app}).
-            creds: Optional Google Cloud credentials.
+            creds: Required Google Cloud credentials.
         """
         self.app_name = app_name
 
