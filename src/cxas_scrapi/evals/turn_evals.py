@@ -126,14 +126,14 @@ class TurnEvals:
     def __init__(
         self,
         app_name: str,
-        creds=None,
+        creds: Any,
         rate_limiter: RateLimiter | None = None,
     ):
         """Initializes the TurnEvals class.
 
         Args:
             app_name: CXAS App Name
-            creds: Optional Google Cloud credentials
+            creds: Required Google Cloud credentials
             rate_limiter: Optional RateLimiter for API calls
         """
         self.app_name = app_name

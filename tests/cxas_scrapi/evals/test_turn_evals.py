@@ -51,7 +51,9 @@ def mock_turn_evals():
         patch("cxas_scrapi.evals.turn_evals.Sessions"),
         patch("cxas_scrapi.evals.turn_evals.Variables"),
     ):
-        evals = TurnEvals(app_name="projects/p/locations/l/apps/a")
+        evals = TurnEvals(
+            app_name="projects/p/locations/l/apps/a", creds=MagicMock()
+        )
         return evals
 
 
@@ -459,12 +461,14 @@ def test_run_turn_tests_multi_turn_with_event(mock_turn_evals):
 @patch("cxas_scrapi.evals.turn_evals.Sessions")
 def test_turn_evals_init_with_rate_limiter(mock_sessions, mock_variables):
     mock_rate_limiter = MagicMock()
+    mock_creds = MagicMock()
     _ = TurnEvals(
         app_name="projects/p/locations/l/apps/a",
+        creds=mock_creds,
         rate_limiter=mock_rate_limiter,
     )
     mock_sessions.assert_called_once_with(
         app_name="projects/p/locations/l/apps/a",
-        creds=None,
+        creds=mock_creds,
         rate_limiter=mock_rate_limiter,
     )
