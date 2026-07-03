@@ -119,40 +119,40 @@ class BenchmarkOrchestratorTest(absltest.TestCase):
             )
         )
 
-    @mock.patch.dict(os.environ, {"BUILD_WORKSPACE_DIRECTORY": "/fake/client"})
     def test_get_workspace_root_returns_build_workspace(self):
-        # Mock os.path.exists to return True
-        with mock.patch("os.path.exists", return_value=True):
+        fake_workspace = os.path.join(self.test_dir, "fake_workspace")
+        os.makedirs(fake_workspace)
+        with mock.patch.dict(
+            os.environ, {"BUILD_WORKSPACE_DIRECTORY": fake_workspace}
+        ):
             self.assertEqual(
                 run_benchmark._get_workspace_root(),
-                "/fake/client",
+                fake_workspace,
             )
 
     @mock.patch.dict(os.environ, {}, clear=True)
     def test_get_workspace_root_fallback_to_cwd(self):
-        with (
-            mock.patch("os.getcwd", return_value="/some/path/my/pkg"),
-            mock.patch.object(pathlib.Path, "exists", return_value=False),
-        ):
+        with mock.patch("os.getcwd", return_value=self.test_dir):
             self.assertEqual(
                 run_benchmark._get_workspace_root(),
-                "/some/path/my/pkg",
+                self.test_dir,
             )
 
-    @mock.patch("os.path.isdir", return_value=True)
-    @mock.patch("os.listdir", return_value=["s1.yaml", "s2.yaml"])
-    @mock.patch("skill_eval.scenario.Scenario.from_file")
-    def test_main_async_fails_on_duplicate_scenario_names(
-        self, mock_from_file, _mock_listdir, _mock_isdir
-    ):
-        scen1 = mock.MagicMock()
-        scen1.name = "DuplicateName"
-        scen2 = mock.MagicMock()
-        scen2.name = "DuplicateName"
-        mock_from_file.side_effect = [scen1, scen2]
+    def test_main_async_fails_on_duplicate_scenario_names(self):
+        # Create a valid scenario file
+        scen_path = os.path.join(self.test_dir, "duplicate.yaml")
+        with open(scen_path, "w") as f:
+            f.write(
+                "prompt: dummy\nrubric:\n  - criteria: dummy\n    perfect:"
+                " p\n    good: g\n    failed: f\n"
+            )
 
-        temp_dir = self.create_tempdir().full_path
-        with flagsaver.flagsaver(scenario_path="fake_dir", output_dir=temp_dir):
+        # Pass the same file twice to trigger duplicate detection
+        dup_paths = f"{scen_path},{scen_path}"
+
+        with flagsaver.flagsaver(
+            scenario_path=dup_paths, output_dir=self.test_dir
+        ):
             with self.assertRaises(SystemExit):
                 asyncio.run(run_benchmark.main_async())
 
