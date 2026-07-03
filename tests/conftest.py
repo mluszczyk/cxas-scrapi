@@ -81,6 +81,11 @@ if "--run-online" not in sys.argv:
     )
     sys.modules["google.cloud.dialogflowcx_v3beta1.types"] = mock_dfcx_types
 
+# Mock google.genai because we are offline and it's missing
+import sys
+from unittest.mock import MagicMock
+sys.modules['google.genai'] = MagicMock()
+
 # Now safe to import GeminiGenerate (which triggers other cxas_scrapi imports)
 from cxas_scrapi.utils.gemini import GeminiGenerate  # noqa: E402
 
