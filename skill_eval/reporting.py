@@ -26,122 +26,68 @@ from typing import Any
 
 import markdown
 
+from htbuilder import a, body, code, details, div, footer, h1, h3, h5, head, html, li, p, pre, span, style, strong, summary, table, tbody, td, th, thead, title, tr, ul
 from skill_eval import benchmark, scenario
 
 _TRAJECTORY_URL_TEMPLATE = os.environ.get("TRAJECTORY_VIEWER_URL", "")
 
-_INDEX_HTML_TEMPLATE = """<!DOCTYPE html>
-<html>
-<head>
-  <title>Agent Evaluation Benchmark</title>
-  <style>
-    body {{ font-family: 'Google Sans', sans-serif; margin: 2rem; background: #f8f9fa; color: #3c4043; display: flex; flex-direction: column; min-height: 90vh; }}
-    h1 {{ color: #1a73e8; margin-bottom: 2rem; }}
-    .summary-card {{ background: white; border-radius: 8px; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.12); margin-bottom: 2rem; flex-grow: 1; }}
-    table {{ width: 100%; border-collapse: collapse; background: white; }}
-    th, td {{ padding: 12px 16px; text-align: left; border-bottom: 1px solid #e0e0e0; }}
-    th {{ background-color: #f1f3f4; font-weight: 500; color: #5f6368; text-transform: uppercase; font-size: 0.85rem; letter-spacing: 0.5px; }}
-    tr:hover {{ background-color: #f8f9fa; }}
-    .scenario-cell {{ font-weight: 500; color: #202124; min-width: 200px; }}
-    .status-badge {{ display: inline-block; padding: 4px 12px; border-radius: 16px; font-size: 0.8rem; font-weight: 500; min-width: 80px; text-align: center; }}
-    .status-pending {{ background: #f1f3f4; color: #5f6368; }}
-    .status-running {{ background: #e8f0fe; color: #1967d2; animation: pulse 2s infinite; }}
-    .status-pass {{ background: #e6f4ea; color: #137333; }}
-    .status-warning {{ background: #fef7e0; color: #b05e00; }}
-    .status-fail {{ background: #fce8e6; color: #c5221f; }}
-    .metric-line {{ font-size: 0.8rem; color: #5f6368; margin-top: 2px; }}
-    .details-link {{ color: #1a73e8; text-decoration: none; font-size: 0.9rem; font-weight: 500; display: inline-block; margin-top: 8px; margin-right: 8px; }}
-    .details-link:hover {{ text-decoration: underline; }}
-    footer {{ margin-top: 3rem; padding: 1.5rem; border-top: 1px solid #e0e0e0; color: #70757a; font-size: 0.85rem; text-align: center; }}
-    @keyframes pulse {{
-      0% {{ opacity: 1; }}
-      50% {{ opacity: 0.6; }}
-      100% {{ opacity: 1; }}
-    }}
-  </style>
-</head>
-<body>
-  <h1>Agent Evaluation Benchmark</h1>
-  <div class="summary-card">
-    <table>
-      <thead>
-        <tr>
-          <th>Scenario</th>
-          {head_headers}
-        </tr>
-      </thead>
-      <tbody>
-        {rows}
-      </tbody>
-    </table>
-  </div>
-  <footer>
-    Evaluation Period: <strong>{eval_start}</strong> &mdash; <strong>{eval_end}</strong>
-    {suite_duration_html}
-  </footer>
-</body>
-</html>
+_INDEX_CSS = """
+    body { font-family: 'Google Sans', sans-serif; margin: 2rem; background: #f8f9fa; color: #3c4043; display: flex; flex-direction: column; min-height: 90vh; }
+    h1 { color: #1a73e8; margin-bottom: 2rem; }
+    .summary-card { background: white; border-radius: 8px; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.12); margin-bottom: 2rem; flex-grow: 1; }
+    table { width: 100%; border-collapse: collapse; background: white; }
+    th, td { padding: 12px 16px; text-align: left; border-bottom: 1px solid #e0e0e0; }
+    th { background-color: #f1f3f4; font-weight: 500; color: #5f6368; text-transform: uppercase; font-size: 0.85rem; letter-spacing: 0.5px; }
+    tr:hover { background-color: #f8f9fa; }
+    .scenario-cell { font-weight: 500; color: #202124; min-width: 200px; }
+    .status-badge { display: inline-block; padding: 4px 12px; border-radius: 16px; font-size: 0.8rem; font-weight: 500; min-width: 80px; text-align: center; }
+    .status-pending { background: #f1f3f4; color: #5f6368; }
+    .status-running { background: #e8f0fe; color: #1967d2; animation: pulse 2s infinite; }
+    .status-pass { background: #e6f4ea; color: #137333; }
+    .status-warning { background: #fef7e0; color: #b05e00; }
+    .status-fail { background: #fce8e6; color: #c5221f; }
+    .metric-line { font-size: 0.8rem; color: #5f6368; margin-top: 2px; }
+    .details-link { color: #1a73e8; text-decoration: none; font-size: 0.9rem; font-weight: 500; display: inline-block; margin-top: 8px; margin-right: 8px; }
+    .details-link:hover { text-decoration: underline; }
+    footer { margin-top: 3rem; padding: 1.5rem; border-top: 1px solid #e0e0e0; color: #70757a; font-size: 0.85rem; text-align: center; }
+    @keyframes pulse {
+      0% { opacity: 1; }
+      50% { opacity: 0.6; }
+      100% { opacity: 1; }
+    }
 """
 
-_DETAIL_HTML_TEMPLATE = """
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Details: {scenario} - {head}</title>
-  <style>
-    body {{ font-family: 'Roboto', sans-serif; margin: 2rem; background: #f8f9fa; line-height: 1.6; color: #3c4043; }}
-    h1 {{ color: #1a73e8; }}
-    .summary-card {{ background: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.12); padding: 1.5rem; margin-bottom: 2rem; }}
-    .turn-container {{ margin-bottom: 1.5rem; border-left: 4px solid #e0e0e0; padding-left: 1rem; }}
-    .turn-header {{ font-size: 0.85rem; color: #70757a; margin-bottom: 0.25rem; display: flex; justify-content: space-between; }}
-    .turn-title {{ margin: 0; font-weight: 500; color: #1a73e8; }}
-    .turn {{ padding: 0.75rem; border-radius: 4px; position: relative; }}
-    .user {{ background: #e8f0fe; border-left: 4px solid #1a73e8; }}
-    .agent {{ background: #f1f3f4; border-left: 4px solid #70757a; margin-top: 0.5rem; }}
-    .turn-meta {{ display: flex; gap: 1rem; font-size: 0.75rem; color: #70757a; margin-top: 0.25rem; }}
-    .timing-pill {{ background: #e8eaed; padding: 2px 8px; border-radius: 10px; }}
-    .tool-interactions {{ margin-top: 1rem; background: #fff; border: 1px solid #dadce0; border-radius: 6px; padding: 1rem; }}
-    .tool-interactions details {{ margin-bottom: 0.5rem; }}
-    .tool-interactions summary {{ cursor: pointer; color: #1a73e8; font-weight: 500; padding: 4px; }}
-    .tool-details {{ padding: 1rem; background: #f8f9fa; border-top: 1px solid #eee; margin-top: 0.5rem; }}
-    .markdown-body pre {{ background: #f8f9fa; padding: 1rem; border-radius: 4px; overflow-x: auto; }}
-    .status-badge {{ padding: 4px 12px; border-radius: 12px; font-size: 0.85rem; font-weight: 500; display: inline-block; }}
-    .status-pass {{ background: #e6f4ea; color: #137333; }}
-    .status-fail {{ background: #fce8e6; color: #c5221f; }}
-    .status-warning {{ background: #fef7e0; color: #b05e00; }}
-    .status-running {{ background: #e8f0fe; color: #1a73e8; animation: pulse 2s infinite; }}
-    .status-initializing {{ background: #e8f0fe; color: #1a73e8; animation: pulse 2s infinite; }}
-    .status-conversing {{ background: #e8f0fe; color: #1a73e8; animation: pulse 2s infinite; }}
-    .status-grading {{ background: #e6f4ea; color: #137333; animation: pulse 2s infinite; }}
-    @keyframes pulse {{ 0% {{ opacity: 1; }} 50% {{ opacity: 0.5; }} 100% {{ opacity: 1; }} }}
-    pre {{ background: #f8f9fa; padding: 0.5rem; overflow-x: auto; border: 1px solid #dee2e6; border-radius: 3px; max-height: 300px; font-size: 0.85rem; }}
-    .scenario-intro {{ background: #e8f0fe; padding: 1.5rem; border-radius: 8px; margin-bottom: 2rem; border: 1px solid #d2e3fc; }}
-    .termination-signal {{ color: #c5221f; background: #fce8e6; padding: 1rem; border-radius: 4px; border: 1px solid #f5c6cb; margin-top: 1rem; font-weight: bold; }}
-    footer {{ margin-top: 3rem; padding: 1.5rem; border-top: 1px solid #e0e0e0; color: #70757a; font-size: 0.85rem; }}
-    .time-stats {{ display: flex; gap: 2rem; color: #5f6368; font-size: 0.85rem; margin-top: 0.5rem; }}
-  </style>
-</head>
-<body>
-  <h1>Details: {scenario} <span style="color: #70757a; font-weight: normal;">&mdash; {head}</span></h1>
-  <p><a href="index.html" style="color: #1a73e8; text-decoration: none; font-weight: 500;">&larr; Back to Summary</a></p>
-{banners}
-{intro}
-{rubric}
-<h3>Conversation History</h3>
-{history}
-{log_links}
-{latency_table}
-
-  <footer>
-    <div class="time-stats">
-      <span>Started: <strong>{start_time}</strong></span>
-      <span>Ended: <strong>{end_time}</strong></span>
-      <span>Total Duration: <strong>{total_duration}s</strong></span>
-      {scoring_latency_html}
-    </div>
-  </footer>
-</body>
-</html>
+_DETAIL_CSS = """
+    body { font-family: 'Roboto', sans-serif; margin: 2rem; background: #f8f9fa; line-height: 1.6; color: #3c4043; }
+    h1 { color: #1a73e8; }
+    .summary-card { background: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.12); padding: 1.5rem; margin-bottom: 2rem; }
+    .turn-container { margin-bottom: 1.5rem; border-left: 4px solid #e0e0e0; padding-left: 1rem; }
+    .turn-header { font-size: 0.85rem; color: #70757a; margin-bottom: 0.25rem; display: flex; justify-content: space-between; }
+    .turn-title { margin: 0; font-weight: 500; color: #1a73e8; }
+    .turn { padding: 0.75rem; border-radius: 4px; position: relative; }
+    .user { background: #e8f0fe; border-left: 4px solid #1a73e8; }
+    .agent { background: #f1f3f4; border-left: 4px solid #70757a; margin-top: 0.5rem; }
+    .turn-meta { display: flex; gap: 1rem; font-size: 0.75rem; color: #70757a; margin-top: 0.25rem; }
+    .timing-pill { background: #e8eaed; padding: 2px 8px; border-radius: 10px; }
+    .tool-interactions { margin-top: 1rem; background: #fff; border: 1px solid #dadce0; border-radius: 6px; padding: 1rem; }
+    .tool-interactions details { margin-bottom: 0.5rem; }
+    .tool-interactions summary { cursor: pointer; color: #1a73e8; font-weight: 500; padding: 4px; }
+    .tool-details { padding: 1rem; background: #f8f9fa; border-top: 1px solid #eee; margin-top: 0.5rem; }
+    .markdown-body pre { background: #f8f9fa; padding: 1rem; border-radius: 4px; overflow-x: auto; }
+    .status-badge { padding: 4px 12px; border-radius: 12px; font-size: 0.85rem; font-weight: 500; display: inline-block; }
+    .status-pass { background: #e6f4ea; color: #137333; }
+    .status-fail { background: #fce8e6; color: #c5221f; }
+    .status-warning { background: #fef7e0; color: #b05e00; }
+    .status-running { background: #e8f0fe; color: #1a73e8; animation: pulse 2s infinite; }
+    .status-initializing { background: #e8f0fe; color: #1a73e8; animation: pulse 2s infinite; }
+    .status-conversing { background: #e8f0fe; color: #1a73e8; animation: pulse 2s infinite; }
+    .status-grading { background: #e6f4ea; color: #137333; animation: pulse 2s infinite; }
+    @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+    pre { background: #f8f9fa; padding: 0.5rem; overflow-x: auto; border: 1px solid #dee2e6; border-radius: 3px; max-height: 300px; font-size: 0.85rem; }
+    .scenario-intro { background: #e8f0fe; padding: 1.5rem; border-radius: 8px; margin-bottom: 2rem; border: 1px solid #d2e3fc; }
+    .termination-signal { color: #c5221f; background: #fce8e6; padding: 1rem; border-radius: 4px; border: 1px solid #f5c6cb; margin-top: 1rem; font-weight: bold; }
+    footer { margin-top: 3rem; padding: 1.5rem; border-top: 1px solid #e0e0e0; color: #70757a; font-size: 0.85rem; }
+    .time-stats { display: flex; gap: 2rem; color: #5f6368; font-size: 0.85rem; margin-top: 0.5rem; }
 """
 
 
@@ -200,81 +146,114 @@ def generate_index_html(
     eval_start = _format_ts(eval_start_val)
     eval_end = _format_ts(eval_end_val)
 
-    head_headers = "".join(f"<th>{_escape_html(h)}</th>" for h in all_heads)
+    # Build headers
+    headers = [th("Scenario")] + [th(_escape_html(h)) for h in all_heads]
 
-    rows_html = ""
+    # Build rows
+    rows = []
     if not results:
-        rows_html = (
-            '<tr><td colspan="100%" style="text-align: center; padding: 2rem;'
-            ' color: #70757a;">Initializing benchmark suite...</td></tr>'
+        rows.append(
+            tr(
+                td(colspan="100%", style="text-align: center; padding: 2rem; color: #70757a;")(
+                    "Initializing benchmark suite..."
+                )
+            )
         )
+    else:
+        for scenario_name in sorted(by_scenario.keys()):
+            row_cells = [td(_class="scenario-cell")(_escape_html(scenario_name))]
+            head_map = {r.head_name: r for r in by_scenario[scenario_name]}
 
-    for scenario_name in sorted(by_scenario.keys()):
-        rows_html += (
-            f'<tr><td class="scenario-cell">{_escape_html(scenario_name)}</td>'
-        )
-        head_map = {r.head_name: r for r in by_scenario[scenario_name]}
+            for head_name in all_heads:
+                res = head_map.get(head_name)
+                if not res:
+                    row_cells.append(td("-"))
+                    continue
 
-        for head_name in all_heads:
-            res = head_map.get(head_name)
-            if not res:
-                rows_html += "<td>-</td>"
-                continue
+                status_class = f"status-{res.status.value.lower()}"
+                status_text = res.status.value
 
-            status_class = f"status-{res.status.value.lower()}"
-            status_text = res.status.value
-
-            if res.status == benchmark.ExecutionStatus.FINISHED:
-                earned, total = 0, 0
-                if res.rubric_results:
-                    earned = res.rubric_results.total_score
-                    total = res.rubric_results.max_score
-                    status_text = f"Score: {earned}/{total}"
-                    pct = (earned / total) if total > 0 else 0
-                    if pct >= 1.0:
-                        status_class = "status-pass"
-                    elif pct >= 0.5:
-                        status_class = "status-warning"
+                if res.status == benchmark.ExecutionStatus.FINISHED:
+                    earned, total = 0, 0
+                    if res.rubric_results:
+                        earned = res.rubric_results.total_score
+                        total = res.rubric_results.max_score
+                        status_text = f"Score: {earned}/{total}"
+                        pct = (earned / total) if total > 0 else 0
+                        if pct >= 1.0:
+                            status_class = "status-pass"
+                        elif pct >= 0.5:
+                            status_class = "status-warning"
+                        else:
+                            status_class = "status-fail"
                     else:
                         status_class = "status-fail"
-                else:
-                    status_class = "status-fail"
-                    status_text = "FAILED"
+                        status_text = "FAILED"
 
-            safe_scenario_name = scenario.get_safe_filename(res.scenario_name)
-            link_html = (
-                f'<a href="detail_{safe_scenario_name}_{_escape_html(res.head_name)}.html"'
-                ' class="details-link">Details</a>'
-            )
-            if getattr(res, "trajectory_id", None) and _TRAJECTORY_URL_TEMPLATE:
-                url = _TRAJECTORY_URL_TEMPLATE.replace(
-                    "{id}", _escape_html(res.trajectory_id)
+                safe_scenario_name = scenario.get_safe_filename(res.scenario_name)
+
+                # Links
+                links = [
+                    a(
+                        href=f"detail_{safe_scenario_name}_{_escape_html(res.head_name)}.html",
+                        _class="details-link"
+                    )("Details")
+                ]
+                if getattr(res, "trajectory_id", None) and _TRAJECTORY_URL_TEMPLATE:
+                    url = _TRAJECTORY_URL_TEMPLATE.replace(
+                        "{id}", _escape_html(res.trajectory_id)
+                    )
+                    links.append(
+                        a(
+                            href=url,
+                            target="_blank",
+                            _class="details-link"
+                        )("Trajectory")
+                    )
+
+                row_cells.append(
+                    td(
+                        div(_class=f"status-badge {status_class}")(status_text),
+                        div(_class="metric-line")(
+                            f"Turns: {res.turns} | Time: {res.total_time_sec:.1f}s"
+                        ),
+                        links
+                    )
                 )
-                link_html += f'<a href="{url}" target="_blank" class="details-link">Trajectory</a>'
+            rows.append(tr(row_cells))
 
-            rows_html += f"""
-        <td>
-          <div class="status-badge {status_class}">{status_text}</div>
-          <div class="metric-line">Turns: {res.turns} | Time: {res.total_time_sec:.1f}s</div>
-          {link_html}
-        </td>
-      """
-        rows_html += "</tr>"
-
-    suite_duration_html = ""
+    # Footer elements
+    footer_children = [
+        "Evaluation Period: ",
+        strong(eval_start),
+        " — ",
+        strong(eval_end)
+    ]
     if suite_duration.total_seconds() > 0:
-        suite_duration_html = (
-            " &mdash; Suite Duration:"
-            f" <strong>{suite_duration.total_seconds():.1f}s</strong>"
-        )
+        footer_children += [
+            " — Suite Duration: ",
+            strong(f"{suite_duration.total_seconds():.1f}s")
+        ]
 
-    return _INDEX_HTML_TEMPLATE.format(
-        head_headers=head_headers,
-        rows=rows_html,
-        eval_start=eval_start,
-        eval_end=eval_end,
-        suite_duration_html=suite_duration_html,
+    # Assemble document
+    doc = html(
+        head(
+            title("Agent Evaluation Benchmark"),
+            style(_INDEX_CSS)
+        ),
+        body(
+            h1("Agent Evaluation Benchmark"),
+            div(_class="summary-card")(
+                table(
+                    thead(tr(headers)),
+                    tbody(rows)
+                )
+            ),
+            footer(footer_children)
+        )
     )
+
+    return f"<!DOCTYPE html>\n{doc}"
 
 
 def generate_detail_html(
@@ -282,19 +261,19 @@ def generate_detail_html(
     report_dir: str | None = None,
 ) -> str:
     """Generates the detailed per-agent HTML report."""
-    banners = ""
+    banners = None
     if result.status in (
         benchmark.ExecutionStatus.RUNNING,
         benchmark.ExecutionStatus.INITIALIZING,
         benchmark.ExecutionStatus.CONVERSING,
         benchmark.ExecutionStatus.GRADING,
     ):
-        banners = (
-            f'<div class="status-badge status-{result.status.value.lower()}"'
-            f' style="margin-bottom: 1rem;">{result.status.value}</div>'
-        )
+        banners = div(
+            _class=f"status-badge status-{result.status.value.lower()}",
+            style="margin-bottom: 1rem;",
+        )(result.status.value)
 
-    intro_html = ""
+    intro = None
     if result.scenario_text:
         match = re.split(
             r"##\s*Steps|#\s*Reference|##\s*Rubric", result.scenario_text
@@ -303,9 +282,9 @@ def generate_detail_html(
             intro_content = markdown.markdown(
                 match[0].strip(), extensions=["fenced_code", "tables", "nl2br"]
             )
-            intro_html = (
-                '<div class="scenario-intro"><h3>Goal &amp;'
-                f" Context</h3>{intro_content}</div>"
+            intro = div(_class="scenario-intro")(
+                h3("Goal & Context"),
+                intro_content
             )
 
     links = []
@@ -314,8 +293,10 @@ def generate_detail_html(
             "{id}", _escape_html(result.trajectory_id)
         )
         links.append(
-            f'<li><strong>Trajectory Viewer:</strong> <a href="{url}" '
-            f'target="_blank">{_escape_html(result.trajectory_id)}</a></li>'
+            li(
+                strong("Trajectory Viewer: "),
+                a(href=url, target="_blank")(_escape_html(result.trajectory_id))
+            )
         )
 
     if result.log_files:
@@ -327,29 +308,31 @@ def generate_detail_html(
 
             if report_dir:
                 try:
-                    # Standardize relative path resolved from report directory
                     rel_path = os.path.relpath(
                         abs_path, start=os.path.abspath(report_dir)
                     )
-                    # Web-standard URL-encode the path using forward slashes
                     href = urllib.parse.quote(rel_path.replace(os.sep, "/"))
                     display_name = rel_path
                 except Exception:
                     pass
 
             links.append(
-                f'<li><a href="{href}" target="_blank">{_escape_html(display_name)}</a> '
-                f'(<a href="{file_uri}" target="_blank">absolute fallback</a>)</li>'
+                li(
+                    a(href=href, target="_blank")(_escape_html(display_name)),
+                    " (",
+                    a(href=file_uri, target="_blank")("absolute fallback"),
+                    ")"
+                )
             )
 
-    log_links_html = ""
+    log_links = None
     if links:
-        log_links_html = (
-            '<div class="scenario-intro" style="margin-top: 2rem;"><h3>Raw'
-            f" Diagnostic Logs &amp; Links</h3><ul>{''.join(links)}</ul></div>"
+        log_links = div(_class="scenario-intro", style="margin-top: 2rem;")(
+            h3("Raw Diagnostic Logs & Links"),
+            ul(links)
         )
 
-    rubric_html = ""
+    rubric = None
     if result.rubric_results:
         res = result.rubric_results
         earned, total = res.total_score, res.max_score
@@ -361,159 +344,201 @@ def generate_detail_html(
         else:
             s_cls, s_txt = "status-fail", "FAILED"
 
-        rows = ""
+        rows = []
         for s in res.scores:
-            score_style = (
-                "color: #137333; font-weight: bold;"
-                if s.score == 2
-                else ("color: #b05e00;" if s.score == 1 else "color: #c5221f;")
+            score_color = (
+                "#137333" if s.score == 2
+                else ("#b05e00" if s.score == 1 else "#c5221f")
             )
-            rows += (
-                '<tr><td style="border: 1px solid #e0e0e0; padding:'
-                f' 12px;">{_escape_html(s.criteria)}</td>'
-            )
-            rows += (
-                '<td style="border: 1px solid #e0e0e0; padding: 12px; text-align:'
-                f' center; {score_style}">{s.score}/2</td>'
-            )
-            rows += (
-                '<td style="border: 1px solid #e0e0e0; padding: 12px; color:'
-                f' #5f6368; font-size: 0.9rem;">{_escape_html(s.reasoning)}</td></tr>'
+            score_weight = "bold" if s.score == 2 else "normal"
+            score_style = f"border: 1px solid #e0e0e0; padding: 12px; text-align: center; color: {score_color}; font-weight: {score_weight};"
+
+            rows.append(
+                tr(
+                    td(style="border: 1px solid #e0e0e0; padding: 12px;")(
+                        _escape_html(s.criteria)
+                    ),
+                    td(style=score_style)(f"{s.score}/2"),
+                    td(
+                        style="border: 1px solid #e0e0e0; padding: 12px; color: #5f6368; font-size: 0.9rem;"
+                    )(_escape_html(s.reasoning))
+                )
             )
 
-        rubric_html = f"""
-    <div class="summary-card">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-        <h3 style="margin: 0; color: #1a73e8;">Rubric Assessment</h3>
-        <div class="status-badge {s_cls}" style="font-size: 1rem; padding: 8px 24px;">{s_txt} ({earned}/{total})</div>
-      </div>
-      <p style="color: #5f6368; margin-bottom: 1.5rem;"><strong>Overall:</strong> {_escape_html(res.summary)}</p>
-      <table style="width: 100%; border-collapse: collapse; border: 1px solid #e0e0e0;">
-        <thead><tr style="background: #f1f3f4;"><th style="padding: 12px;">Criterion</th><th style="padding: 12px; text-align: center;">Score</th><th style="padding: 12px;">Reasoning</th></tr></thead>
-        <tbody>{rows}</tbody>
-      </table>
-    </div>"""
+        rubric = div(_class="summary-card")(
+            div(
+                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;"
+            )(
+                h3(style="margin: 0; color: #1a73e8;")("Rubric Assessment"),
+                div(
+                    _class=f"status-badge {s_cls}",
+                    style="font-size: 1rem; padding: 8px 24px;"
+                )(f"{s_txt} ({earned}/{total})")
+            ),
+            p(style="color: #5f6368; margin-bottom: 1.5rem;")(
+                strong("Overall: "),
+                _escape_html(res.summary)
+            ),
+            table(style="width: 100%; border-collapse: collapse; border: 1px solid #e0e0e0;")(
+                thead(
+                    tr(style="background: #f1f3f4;")(
+                        th(style="padding: 12px;")("Criterion"),
+                        th(style="padding: 12px; text-align: center;")("Score"),
+                        th(style="padding: 12px;")("Reasoning")
+                    )
+                ),
+                tbody(rows)
+            )
+        )
 
-    history_html = ""
+    history_turns = []
     num_turns = (len(result.messages) + 1) // 2
     for i in range(num_turns):
         m = result.turn_metrics[i] if i < len(result.turn_metrics) else None
 
-        timing_html = ""
+        timing = None
         if m:
-            timing_html = (
-                '<div class="turn-meta"><span class="timing-pill">Sim:'
-                f" {m.simulator_latency_sec:.2f}s</span><span"
-                f' class="timing-pill">Agent: {m.latency_sec:.2f}s</span></div>'
+            timing = div(_class="turn-meta")(
+                span(_class="timing-pill")(f"Sim: {m.simulator_latency_sec:.2f}s"),
+                span(_class="timing-pill")(f"Agent: {m.latency_sec:.2f}s")
             )
 
-        history_html += (
-            '<div class="turn-container"><div class="turn-header"><h5'
-            f' class="turn-title">Turn {i + 1}</h5></div>'
-        )
+        turn_children = [
+            div(_class="turn-header")(
+                h5(_class="turn-title")(f"Turn {i + 1}")
+            )
+        ]
 
         if (2 * i) < len(result.messages):
-            history_html += (
-                '<div class="turn user"><strong>User:</strong>'
-                f" {_escape_html(result.messages[2 * i]['content'])}</div>"
+            turn_children.append(
+                div(_class="turn user")(
+                    strong("User:"),
+                    f" {_escape_html(result.messages[2 * i]['content'])}"
+                )
             )
-            history_html += timing_html
+            if timing:
+                turn_children.append(timing)
 
         if m and (getattr(m, "events", None) or m.tool_interactions):
-            history_html += (
-                '<details class="tool-interactions"><summary><strong>Execution'
-                " Events</strong></summary>"
-            )
-
+            event_details = []
             if getattr(m, "events", None):
                 for ev in m.events:
                     if isinstance(ev, benchmark.ToolCallEvent):
-                        summary_text = f"Tool Call: {_escape_html(ev.name)}"
-                        base_text = f"Tool Call: {_escape_html(ev.name)}"
-                        summary_text = base_text
+                        summary_content = [f"Tool Call: {_escape_html(ev.name)}"]
                         if ev.name == "run_command":
                             command_line = ev.args.get(
                                 "command_line"
                             ) or ev.args.get("CommandLine")
                             if command_line:
-                                summary_text = (
-                                    base_text
-                                    + f" - <code>{_escape_html(command_line)}</code>"
-                                )
+                                summary_content += [
+                                    " - ",
+                                    code(_escape_html(command_line))
+                                ]
 
                         escaped_args = _escape_html(
                             json.dumps(ev.args, indent=2)
                         )
-                        history_html += (
-                            f"<details><summary>{summary_text}</summary><div"
-                            ' class="tool-details"><p><strong>Source:</strong>'
-                            f" {ev.source}</p><p><strong>Call ID:</strong>"
-                            f" {ev.call_id}</p><p><strong>Args:</strong></p>"
-                            f"<pre>{escaped_args}</pre></div></details>"
+                        event_details.append(
+                            details(
+                                summary(summary_content),
+                                div(_class="tool-details")(
+                                    p(strong("Source: "), ev.source),
+                                    p(strong("Call ID: "), ev.call_id),
+                                    p(strong("Args: ")),
+                                    pre(escaped_args)
+                                )
+                            )
                         )
                     elif isinstance(ev, benchmark.ToolResultEvent):
-                        history_html += (
-                            "<details><summary><code>Tool Result for"
-                            f" {ev.call_id}</code></summary><div"
-                            ' class="tool-details"><p><strong>Source:</strong>'
-                            f" {ev.source}</p><p><strong>Status:</strong>"
-                            f" {'Error' if ev.is_error else 'Success'}</p><p><strong>Output:</strong></p><pre>{_escape_html(ev.output)}</pre></div></details>"
+                        event_details.append(
+                            details(
+                                summary(code(f"Tool Result for {ev.call_id}")),
+                                div(_class="tool-details")(
+                                    p(strong("Source: "), ev.source),
+                                    p(strong("Status: "), 'Error' if ev.is_error else 'Success'),
+                                    p(strong("Output: ")),
+                                    pre(_escape_html(ev.output))
+                                )
+                            )
                         )
                     elif (
                         isinstance(ev, benchmark.AgentMessageEvent)
                         and ev.is_thought
                     ):
-                        history_html += (
-                            "<details><summary><code>Thought"
-                            f" ({ev.source})</code></summary><div"
-                            f' class="tool-details"><pre>{_escape_html(ev.text)}</pre></div></details>'
+                        event_details.append(
+                            details(
+                                summary(code(f"Thought ({ev.source})")),
+                                div(_class="tool-details")(
+                                    pre(_escape_html(ev.text))
+                                )
+                            )
                         )
                     elif isinstance(ev, benchmark.SubagentEvent):
-                        history_html += (
-                            "<details><summary><code>Subagent"
-                            f" {ev.action}</code></summary><div"
-                            ' class="tool-details"><p><strong>Subagent ID:</strong>'
-                            f" {ev.subagent_id}</p><p><strong>Prompt:</strong>"
-                            f" {_escape_html(ev.prompt)}</p></div></details>"
+                        event_details.append(
+                            details(
+                                summary(code(f"Subagent {ev.action}")),
+                                div(_class="tool-details")(
+                                    p(strong("Subagent ID: "), ev.subagent_id),
+                                    p(strong("Prompt: "), _escape_html(ev.prompt))
+                                )
+                            )
                         )
             elif m.tool_interactions:
                 for ti in m.tool_interactions:
-                    thought_html = ""
+                    thought_element = None
                     if ti.thought:
-                        thought_html = (
-                            '<p style="color: #666; font-style:'
-                            ' italic;"><strong>Thought:</strong>'
-                            f" {_escape_html(ti.thought)}</p>"
+                        thought_element = p(style="color: #666; font-style: italic;")(
+                            strong("Thought: "),
+                            _escape_html(ti.thought)
                         )
-                    history_html += (
-                        f"<details><summary><code>{_escape_html(ti.name)}</code></summary><div"
-                        f' class="tool-details">{thought_html}<p><strong>Args:</strong></p><pre>{_escape_html(json.dumps(ti.args, indent=2))}</pre>'
-                    )
-                    if ti.output:
-                        history_html += f"<p><strong>Output:</strong></p><pre>{_escape_html(ti.output)}</pre>"
-                    history_html += "</div></details>"
 
-            history_html += "</details>"
+                    details_children = [
+                        thought_element,
+                        p(strong("Args: ")),
+                        pre(_escape_html(json.dumps(ti.args, indent=2)))
+                    ]
+                    if ti.output:
+                        details_children += [
+                            p(strong("Output: ")),
+                            pre(_escape_html(ti.output))
+                        ]
+
+                    event_details.append(
+                        details(
+                            summary(code(_escape_html(ti.name))),
+                            div(_class="tool-details")(details_children)
+                        )
+                    )
+
+            turn_children.append(
+                details(_class="tool-interactions")(
+                    summary(strong("Execution Events")),
+                    event_details
+                )
+            )
 
         if (2 * i + 1) < len(result.messages):
             rendered = markdown.markdown(
                 result.messages[2 * i + 1]["content"],
                 extensions=["fenced_code", "tables", "nl2br"],
             )
-            history_html += (
-                '<div class="turn agent"><strong>Agent:</strong><div'
-                f' class="markdown-body">{rendered}</div></div>'
+            turn_children.append(
+                div(_class="turn agent")(
+                    strong("Agent:"),
+                    div(_class="markdown-body")(rendered)
+                )
             )
         elif (
             i < num_turns - 1
             or result.status == benchmark.ExecutionStatus.FAILED
         ):
-            history_html += (
-                '<div class="turn agent" style="color: red; border-left-color:'
-                ' red;"><strong>Agent:</strong> [FAILED]</div>'
+            turn_children.append(
+                div(_class="turn agent", style="color: red; border-left-color: red;")(
+                    strong("Agent:"), " [FAILED]"
+                )
             )
 
-        history_html += "</div>"
+        history_turns.append(div(_class="turn-container")(turn_children))
 
     final_failure = result.failure_reason
     if (
@@ -523,73 +548,129 @@ def generate_detail_html(
     ):
         final_failure = result.messages[-1]["content"]
     if final_failure:
-        history_html += (
-            '<div class="termination-signal">Termination Signal:'
-            f" {_escape_html(final_failure)}</div>"
+        history_turns.append(
+            div(_class="termination-signal")(
+                "Termination Signal: ",
+                _escape_html(final_failure)
+            )
         )
 
-    scoring_latency_html = ""
+    scoring_latency = None
     if result.scoring_latency.total_seconds() > 0:
-        scoring_latency_html = (
-            "<span>Scoring Duration:"
-            f" <strong>{result.scoring_latency.total_seconds():.1f}s</strong></span>"
+        scoring_latency = span(
+            "Scoring Duration: ",
+            strong(f"{result.scoring_latency.total_seconds():.1f}s")
         )
 
-    # Latency Profile Table HTML
-    latency_table_html = f"""
-  <div class="summary-card">
-    <h3 style="margin-top: 0; color: #1a73e8;">Orchestration Latency Profile</h3>
-    <table style="width: auto; min-width: 450px; border: 1px solid #dadce0; border-radius: 6px; border-collapse: collapse;">
-      <thead>
-        <tr style="background: #f1f3f4;">
-          <th style="padding: 8px 16px; text-align: left; border-bottom: 1px solid #dee2e6;">Phase</th>
-          <th style="padding: 8px 16px; text-align: right; border-bottom: 1px solid #dee2e6;">Duration</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr style="border-bottom: 1px solid #eee;">
-          <td style="padding: 8px 16px;"><strong>Initialization Queue</strong> (waiting for slot)</td>
-          <td style="padding: 8px 16px; text-align: right;">{result.init_queued_latency.total_seconds():.2f}s</td>
-        </tr>
-        <tr style="border-bottom: 1px solid #eee;">
-          <td style="padding: 8px 16px;"><strong>Active Initialization</strong> (asset copy, pip/uv setup, LS bootstrap)</td>
-          <td style="padding: 8px 16px; text-align: right;">{result.init_active_latency.total_seconds():.2f}s</td>
-        </tr>
-        <tr style="border-bottom: 1px solid #eee;">
-          <td style="padding: 8px 16px;"><strong>Agent Execution</strong> (turns and tools)</td>
-          <td style="padding: 8px 16px; text-align: right;">{result.conversing_latency.total_seconds():.2f}s</td>
-        </tr>
-        <tr style="border-bottom: 1px solid #eee;">
-          <td style="padding: 8px 16px;"><strong>Rubric Grading</strong> (Gemini evaluation)</td>
-          <td style="padding: 8px 16px; text-align: right;">{result.scoring_latency.total_seconds():.2f}s</td>
-        </tr>
-        <tr style="border-bottom: 1px solid #eee;">
-          <td style="padding: 8px 16px;"><strong>Teardown &amp; Cleanup</strong> (sandbox application deletion)</td>
-          <td style="padding: 8px 16px; text-align: right;">{result.cleanup_latency.total_seconds():.2f}s</td>
-        </tr>
-        <tr style="font-weight: bold; background: #e8f0fe; border-top: 2px solid #1a73e8;">
-          <td style="padding: 8px 16px;">Total Orchestrated Duration</td>
-          <td style="padding: 8px 16px; text-align: right; color: #1a73e8;">{result.total_time_sec:.2f}s</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-  """
-
-    return _DETAIL_HTML_TEMPLATE.format(
-        latency_table=latency_table_html,
-        scenario=_escape_html(result.scenario_name),
-        head=_escape_html(result.head_name),
-        banners=banners,
-        intro=intro_html,
-        rubric=rubric_html,
-        history=history_html,
-        log_links=log_links_html,
-        start_time=_format_ts(result.start_time),
-        end_time=_format_ts(result.end_time),
-        total_duration=f"{result.total_time_sec:.1f}",
-        scoring_latency_html=scoring_latency_html,
+    latency_table = div(_class="summary-card")(
+        h3(style="margin-top: 0; color: #1a73e8;")("Orchestration Latency Profile"),
+        table(
+            style="width: auto; min-width: 450px; border: 1px solid #dadce0; border-radius: 6px; border-collapse: collapse;"
+        )(
+            thead(
+                tr(style="background: #f1f3f4;")(
+                    th(
+                        style="padding: 8px 16px; text-align: left; border-bottom: 1px solid #dee2e6;"
+                    )("Phase"),
+                    th(
+                        style="padding: 8px 16px; text-align: right; border-bottom: 1px solid #dee2e6;"
+                    )("Duration")
+                )
+            ),
+            tbody(
+                tr(style="border-bottom: 1px solid #eee;")(
+                    td(style="padding: 8px 16px;")(
+                        strong("Initialization Queue"), " (waiting for slot)"
+                    ),
+                    td(style="padding: 8px 16px; text-align: right;")(
+                        f"{result.init_queued_latency.total_seconds():.2f}s"
+                    )
+                ),
+                tr(style="border-bottom: 1px solid #eee;")(
+                    td(style="padding: 8px 16px;")(
+                        strong("Active Initialization"),
+                        " (asset copy, pip/uv setup, LS bootstrap)"
+                    ),
+                    td(style="padding: 8px 16px; text-align: right;")(
+                        f"{result.init_active_latency.total_seconds():.2f}s"
+                    )
+                ),
+                tr(style="border-bottom: 1px solid #eee;")(
+                    td(style="padding: 8px 16px;")(
+                        strong("Agent Execution"), " (turns and tools)"
+                    ),
+                    td(style="padding: 8px 16px; text-align: right;")(
+                        f"{result.conversing_latency.total_seconds():.2f}s"
+                    )
+                ),
+                tr(style="border-bottom: 1px solid #eee;")(
+                    td(style="padding: 8px 16px;")(
+                        strong("Rubric Grading"), " (Gemini evaluation)"
+                    ),
+                    td(style="padding: 8px 16px; text-align: right;")(
+                        f"{result.scoring_latency.total_seconds():.2f}s"
+                    )
+                ),
+                tr(style="border-bottom: 1px solid #eee;")(
+                    td(style="padding: 8px 16px;")(
+                        strong("Teardown & Cleanup"),
+                        " (sandbox application deletion)"
+                    ),
+                    td(style="padding: 8px 16px; text-align: right;")(
+                        f"{result.cleanup_latency.total_seconds():.2f}s"
+                    )
+                ),
+                tr(
+                    style="font-weight: bold; background: #e8f0fe; border-top: 2px solid #1a73e8;"
+                )(
+                    td(style="padding: 8px 16px;")("Total Orchestrated Duration"),
+                    td(style="padding: 8px 16px; text-align: right; color: #1a73e8;")(
+                        f"{result.total_time_sec:.2f}s"
+                    )
+                )
+            )
+        )
     )
+
+    doc = html(
+        head(
+            title(f"Details: {_escape_html(result.scenario_name)} - {_escape_html(result.head_name)}"),
+            style(_DETAIL_CSS)
+        ),
+        body(
+            h1(
+                "Details: ",
+                _escape_html(result.scenario_name),
+                " ",
+                span(style="color: #70757a; font-weight: normal;")(
+                    "— ",
+                    _escape_html(result.head_name)
+                )
+            ),
+            p(
+                a(href="index.html", style="color: #1a73e8; text-decoration: none; font-weight: 500;")(
+                    "← Back to Summary"
+                )
+            ),
+            banners,
+            intro,
+            rubric,
+            h3("Conversation History"),
+            history_turns,
+            log_links,
+            latency_table,
+            footer(
+                div(_class="time-stats")(
+                    span("Started: ", strong(_format_ts(result.start_time))),
+                    span("Ended: ", strong(_format_ts(result.end_time))),
+                    span("Total Duration: ", strong(f"{result.total_time_sec:.1f}s")),
+                    scoring_latency
+                )
+            )
+        )
+    )
+
+    return f"<!DOCTYPE html>\n{doc}"
 
 
 def _group_by_scenario(results: Sequence[benchmark.ConversationResult]):
