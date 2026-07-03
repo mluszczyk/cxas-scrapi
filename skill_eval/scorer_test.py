@@ -15,23 +15,40 @@
 """Tests for rubric scorer."""
 
 import asyncio
-from unittest import mock
-
 from absl.testing import absltest
+from google import genai
 
 from skill_eval import scenario, scorer
 
 
+class FakeResponse:
+    def __init__(self, text):
+        self.text = text
+
+
 class ScorerTest(absltest.TestCase):
-    @mock.patch("google.genai.Client")
-    def test_score_calls_gemini_and_parses_json(self, mock_client_class):
-        mock_client = mock_client_class.return_value
-        mock_response = mock.MagicMock()
-        mock_response.text = (
+    def test_score_calls_gemini_and_parses_json(self):
+        response_text = (
             '{"scores": [{"criteria": "C1", "score": 2, "reasoning": "r"}],'
             ' "summary": "s"}'
         )
-        mock_client.models.generate_content.return_value = mock_response
+        
+        calls = []
+        
+        class FakeClient:
+            def __init__(self, *args, **kwargs):
+                self.models = self
+                
+            def generate_content(self, model, contents, config=None):
+                calls.append(self)
+                self.called_model = model
+                self.called_contents = contents
+                self.called_config = config
+                return FakeResponse(response_text)
+
+        original_client = genai.Client
+        genai.Client = FakeClient
+        self.addCleanup(setattr, genai, 'Client', original_client)
 
         scen = scenario.Scenario(
             name="test",
@@ -62,6 +79,11 @@ class ScorerTest(absltest.TestCase):
         self.assertEqual(result.total_score, 2)
         self.assertEqual(result.scores[0].criteria, "C1")
         self.assertEqual(result.summary, "s")
+        
+        # Verify the call to the client
+        self.assertEqual(len(calls), 1)
+        self.assertEqual(calls[0].called_model, "gemini-3.1-pro-preview")
+        self.assertIn("RUBRIC CRITERIA:", calls[0].called_contents)
 
 
 if __name__ == "__main__":
