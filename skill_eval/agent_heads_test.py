@@ -15,6 +15,7 @@
 import asyncio
 import os
 import shutil
+import tempfile
 import unittest
 from unittest import mock
 
@@ -45,32 +46,33 @@ class ScaffoldingTestAgentTest(unittest.TestCase):
 class AntigravityAgentHeadTest(unittest.TestCase):
     def setUp(self):
         super().setUp()
+        self.test_dir = tempfile.mkdtemp()
+        self.scenario_dir = os.path.join(self.test_dir, "scenarios")
+        os.makedirs(self.scenario_dir)
+        
+        self.scenario_path = os.path.join(self.scenario_dir, "test_scen.yaml")
+        with open(self.scenario_path, "w") as f:
+            f.write("prompt: dummy\nrubric:\n  - criteria: dummy\n    perfect: p\n    good: g\n    failed: f\n")
+            
+        self.asset_dir = os.path.join(self.scenario_dir, "test_scen")
+        os.makedirs(self.asset_dir)
+        self.asset_path = os.path.join(self.asset_dir, "asset1.md")
+        with open(self.asset_path, "w") as f:
+            f.write("dummy asset content with {uuid} and {project_id}")
+
+    def tearDown(self):
+        shutil.rmtree(self.test_dir, ignore_errors=True)
+        if hasattr(self, "head") and os.path.exists(self.head._workspace_dir):
+             shutil.rmtree(self.head._workspace_dir, ignore_errors=True)
+        super().tearDown()
 
     @mock.patch.dict(os.environ, {}, clear=True)
-    @mock.patch.object(
-        agent_heads.scenario,
-        "get_asset_path",
-        return_value="/src/path/asset1.md",
-    )
-    @mock.patch.object(shutil, "copy")
-    @mock.patch.object(os, "makedirs")
     @mock.patch.object(agent_heads.AntigravityAgentHead, "_run_subprocess_cmd")
-    @mock.patch.object(os, "chmod")
     @mock.patch("skill_eval.agent_heads.Agent")
-    @mock.patch.object(os.path, "exists", return_value=True)
-    @mock.patch.object(shutil, "copytree")
-    @mock.patch("pathlib.Path.exists", return_value=True)
     def test_initialize_copies_assets_and_starts_agent(
         self,
-        mock_path_exists,
-        mock_copytree,
-        mock_os_exists,
         mock_agent_cls,
-        mock_chmod,
         mock_run_subprocess,
-        mock_makedirs,
-        mock_copy,
-        mock_get_asset_path,
     ):
         # Mock Agent class to act as async context manager
         mock_agent_instance = mock_agent_cls.return_value
@@ -82,22 +84,23 @@ class AntigravityAgentHeadTest(unittest.TestCase):
         # Mock _run_subprocess_cmd as a coroutine mock
         mock_run_subprocess.return_value = None
 
-        head = agent_heads.AntigravityAgentHead(
+        self.head = agent_heads.AntigravityAgentHead(
             scenario_name="test_scen",
-            scenario_path="/tmp/cxas_skill_eval/scenarios/test_scen.yaml",
+            scenario_path=self.scenario_path,
             assets=["asset1.md"],
+            project="test-project",
+            run_uuid="test-uuid",
         )
 
-        asyncio.run(head.initialize())
+        asyncio.run(self.head.initialize())
 
-        mock_get_asset_path.assert_called_once_with(
-            "/tmp/cxas_skill_eval/scenarios/test_scen.yaml",
-            "asset1.md",
-        )
-        mock_copy.assert_called_once_with(
-            "/src/path/asset1.md",
-            os.path.join(head._workspace_dir, "asset1.md"),
-        )
+        # Verify asset was copied and replaced
+        dst_asset_path = os.path.join(self.head._workspace_dir, "asset1.md")
+        self.assertTrue(os.path.exists(dst_asset_path))
+        with open(dst_asset_path) as f:
+            content = f.read()
+        self.assertEqual(content, "dummy asset content with test-uuid and test-project")
+
         mock_agent_cls.assert_called_once()
         mock_agent_instance.__aenter__.assert_called_once()
 
@@ -117,29 +120,18 @@ class AntigravityAgentHeadTest(unittest.TestCase):
             [
                 mock.call(
                     ["uv", "venv", "--python", agent_heads.sys.executable],
-                    head._workspace_dir,
+                    self.head._workspace_dir,
                 ),
                 mock.call(
                     ["uv", "pip", "install", mock.ANY],
-                    head._workspace_dir,
+                    self.head._workspace_dir,
                 ),
             ]
         )
 
     @mock.patch.dict(os.environ, {}, clear=True)
-    @mock.patch.object(
-        agent_heads.scenario,
-        "get_asset_path",
-        return_value="/src/path/asset1.md",
-    )
-    @mock.patch.object(shutil, "copy")
-    @mock.patch.object(os, "makedirs")
     @mock.patch.object(agent_heads.AntigravityAgentHead, "_run_subprocess_cmd")
-    @mock.patch.object(os, "chmod")
     @mock.patch("skill_eval.agent_heads.Agent")
-    @mock.patch.object(os.path, "exists", return_value=True)
-    @mock.patch.object(shutil, "copytree")
-    @mock.patch("pathlib.Path.exists", return_value=True)
     @mock.patch("google.auth.default")
     @mock.patch.object(
         agent_heads.AntigravityAgentHead, "_get_uv_index_env_vars"
@@ -148,15 +140,8 @@ class AntigravityAgentHeadTest(unittest.TestCase):
         self,
         mock_get_uv_env_vars,
         mock_auth_default,
-        mock_path_exists,
-        mock_copytree,
-        mock_os_exists,
         mock_agent_cls,
-        mock_chmod,
         mock_run_subprocess,
-        mock_makedirs,
-        mock_copy,
-        mock_get_asset_path,
     ):
         # Mock Agent class to act as async context manager
         mock_agent_instance = mock_agent_cls.return_value
@@ -188,9 +173,9 @@ class AntigravityAgentHeadTest(unittest.TestCase):
         os.environ["UV_INDEX_PRIVATE_DEFAULT_PASSWORD"] = "original-password"
 
         mock_project = "mock-project-id"
-        head = agent_heads.AntigravityAgentHead(
+        self.head = agent_heads.AntigravityAgentHead(
             scenario_name="test_scen",
-            scenario_path="/tmp/cxas_skill_eval/scenarios/test_scen.yaml",
+            scenario_path=self.scenario_path,
             project=mock_project,
         )
 
@@ -203,7 +188,7 @@ class AntigravityAgentHeadTest(unittest.TestCase):
             self.assertNotIn("CLOUDSDK_CONFIG", os.environ)
 
             # Verify active child virtual environment in os.environ
-            expected_venv = os.path.join(head._workspace_dir, ".venv")
+            expected_venv = os.path.join(self.head._workspace_dir, ".venv")
             self.assertEqual(os.environ.get("VIRTUAL_ENV"), expected_venv)
             self.assertTrue(
                 os.environ.get("PATH").startswith(
@@ -225,8 +210,8 @@ class AntigravityAgentHeadTest(unittest.TestCase):
 
         mock_agent_instance.__aenter__.side_effect = assert_env_variables
 
-        asyncio.run(head.initialize())
-        asyncio.run(head.close())
+        asyncio.run(self.head.initialize())
+        asyncio.run(self.head.close())
 
         # Verify restoration
         self.assertEqual(os.environ.get("PATH"), "/usr/bin")
@@ -247,8 +232,6 @@ class AntigravityAgentHeadTest(unittest.TestCase):
             "original-password",
         )
 
-    # Deleting obsolete workspace cleanup tests because directory cleanup was completely reverted.
-
     @mock.patch("pathlib.Path.exists")
     @mock.patch(
         "builtins.open",
@@ -263,7 +246,7 @@ url = "https://example.com/simple"
         mock_exists.return_value = True
         head = agent_heads.AntigravityAgentHead(
             scenario_name="test-scenario",
-            scenario_path="/tmp/scenarios/test.yaml",
+            scenario_path=self.scenario_path,
             project="test-project",
             location="test-location",
         )
