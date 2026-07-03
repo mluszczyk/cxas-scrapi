@@ -259,6 +259,46 @@ url = "https://example.com/simple"
             },
         )
 
+    @mock.patch("google.auth.default")
+    def test_init_raises_error_if_token_resolution_fails(self, mock_auth_default):
+        mock_auth_default.side_effect = Exception("Auth failed")
+        
+        with self.assertRaises(RuntimeError) as ctx:
+            agent_heads.AntigravityAgentHead(
+                scenario_name="test_scen",
+                scenario_path=self.scenario_path,
+            )
+        self.assertIn("Failed to obtain required GCP token", str(ctx.exception))
+
+    @mock.patch("google.auth.default")
+    def test_init_raises_error_if_token_is_empty(self, mock_auth_default):
+        mock_creds = mock.Mock()
+        mock_creds.valid = True
+        mock_creds.token = None  # Empty token
+        mock_auth_default.return_value = (mock_creds, "mock-project")
+        
+        with self.assertRaises(RuntimeError) as ctx:
+            agent_heads.AntigravityAgentHead(
+                scenario_name="test_scen",
+                scenario_path=self.scenario_path,
+            )
+        self.assertIn("Token is empty after refresh", str(ctx.exception))
+
+    @mock.patch("google.auth.default")
+    def test_init_raises_error_if_project_is_missing(self, mock_auth_default):
+        mock_creds = mock.Mock()
+        mock_creds.valid = True
+        mock_creds.token = "mock-token"
+        mock_auth_default.return_value = (mock_creds, None) # No project
+        
+        with self.assertRaises(RuntimeError) as ctx:
+            agent_heads.AntigravityAgentHead(
+                scenario_name="test_scen",
+                scenario_path=self.scenario_path,
+                project=None, # Not passed as flag
+            )
+        self.assertIn("GCP Project ID could not be resolved", str(ctx.exception))
+
 
 if __name__ == "__main__":
     unittest.main()

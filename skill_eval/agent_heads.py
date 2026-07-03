@@ -36,15 +36,7 @@ from google.antigravity.hooks import policy
 from skill_eval import benchmark, scenario, trajectory_extractor
 
 
-def _get_default_project_id() -> str | None:
-    """Discovers the GCP project ID dynamically from ADC credentials."""
-    try:
-        _, project_id = google.auth.default()
-        if project_id:
-            return project_id
-    except Exception:
-        pass
-    return None
+
 
 
 class ScaffoldingTestAgent(benchmark.BaseAgentHead):
@@ -145,7 +137,6 @@ class AntigravityAgentHead(benchmark.BaseAgentHead):
             f"/tmp/cxas_skill_eval/antigravity_{clean_name}_{self._session_id}"
         )
         self._model = model
-        self._project = project or _get_default_project_id()
         self._location = location
         self._assets = assets or []
         self._scenario_path = scenario_path
@@ -159,7 +150,23 @@ class AntigravityAgentHead(benchmark.BaseAgentHead):
         self._trajectory_extractor = trajectory_extractor.TrajectoryExtractor()
         self._keep_workspaces = keep_workspaces
         self._original_env: dict[str, str | None] = {}
-        self._gcp_token: str | None = None
+
+        # Get GCP Token and Project (Required)
+        try:
+            credentials, resolved_project = google.auth.default()
+            if not credentials.valid:
+                credentials.refresh(google.auth.transport.requests.Request())
+            if not credentials.token:
+                raise RuntimeError("Token is empty after refresh.")
+            self._gcp_token: str = credentials.token
+        except Exception as e:
+            raise RuntimeError(
+                f"Failed to obtain required GCP token: {e}"
+            ) from e
+
+        self._project = project or resolved_project
+        if not self._project:
+            raise RuntimeError("GCP Project ID could not be resolved.")
 
     @property
     def _workspace_dir(self) -> str:
@@ -181,11 +188,10 @@ class AntigravityAgentHead(benchmark.BaseAgentHead):
         # Enable subprocess keyring provider to authenticate uv with private Artifact Registry
         env["UV_KEYRING_PROVIDER"] = "subprocess"
 
-        if self._gcp_token:
-            for key, val in self._get_uv_index_env_vars(
-                self._gcp_token
-            ).items():
-                env[key] = val
+        for key, val in self._get_uv_index_env_vars(
+            self._gcp_token
+        ).items():
+            env[key] = val
 
         process = await asyncio.create_subprocess_exec(
             args[0],
@@ -246,15 +252,7 @@ class AntigravityAgentHead(benchmark.BaseAgentHead):
         await self.close()
         self._trajectory_extractor = trajectory_extractor.TrajectoryExtractor()
 
-        try:
-            credentials, _ = google.auth.default()
-            if not credentials.valid:
-                credentials.refresh(google.auth.transport.requests.Request())
-            self._gcp_token = credentials.token
-        except Exception as e:
-            logging.warning(
-                "[%s] Failed to resolve GCP OAuth token: %s", self.name, e
-            )
+
 
         # Resolve absolute paths to the root repository directory
         skill_eval_dir = pathlib.Path(__file__).parent.resolve()
@@ -339,9 +337,8 @@ class AntigravityAgentHead(benchmark.BaseAgentHead):
             "CXAS_LOCATION": os.environ.get("CXAS_LOCATION"),
             "UV_KEYRING_PROVIDER": os.environ.get("UV_KEYRING_PROVIDER"),
         }
-        if self._gcp_token:
-            for key in self._get_uv_index_env_vars(self._gcp_token):
-                self._original_env[key] = os.environ.get(key)
+        for key in self._get_uv_index_env_vars(self._gcp_token):
+            self._original_env[key] = os.environ.get(key)
 
         local_venv_path = os.path.join(self._workspace_dir, ".venv")
         local_venv_bin = os.path.join(local_venv_path, "bin")
@@ -356,17 +353,15 @@ class AntigravityAgentHead(benchmark.BaseAgentHead):
 
         os.environ["UV_KEYRING_PROVIDER"] = "subprocess"
 
-        if self._gcp_token:
-            for key, val in self._get_uv_index_env_vars(
-                self._gcp_token
-            ).items():
-                os.environ[key] = val
+        for key, val in self._get_uv_index_env_vars(
+            self._gcp_token
+        ).items():
+            os.environ[key] = val
 
-        if self._project:
-            os.environ["GCLOUD_PROJECT"] = self._project
-            os.environ["GOOGLE_CLOUD_PROJECT"] = self._project
-            os.environ["CXAS_PROJECT_ID"] = self._project
-            os.environ["CXAS_LOCATION"] = self._location
+        os.environ["GCLOUD_PROJECT"] = self._project
+        os.environ["GOOGLE_CLOUD_PROJECT"] = self._project
+        os.environ["CXAS_PROJECT_ID"] = self._project
+        os.environ["CXAS_LOCATION"] = self._location
 
         await self._run_setup_commands()
 
